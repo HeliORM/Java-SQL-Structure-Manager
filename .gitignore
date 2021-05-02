@@ -1,0 +1,97 @@
+# Created by http://www.gitignore.io
+
+### Linux ###
+*~
+
+
+### OSX ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must ends with two \r.
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+
+### Java ###
+*.class
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+
+### NetBeans ###
+nbproject/private/
+#build/
+nbbuild/
+#dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+nbactions-release-profile.xml
+
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+pom.xml.versionsBackup
+*/dependency-reduced-pom.xml
+
+/new-vaadin-web/src/main/webapp/VAADIN/themes/demo/styles.css
+/new-vaadin-web/src/main/webapp/VAADIN/themes/neutral/styles.css
+/new-vaadin-web/src/main/webapp/VAADIN/themes/portal/styles.css
+/new-vaadin-web/src/main/webapp/VAADIN/themes/aimsvalo/styles.css
+/product-cost/product-cost-tools/product-classes.ods
+
+/product-costs/nbproject/private/
+/aims-slave/nbproject/
+/aims-admin-tools/src/main/resources/sales
+/aims-admin-tools/nbproject/
+/aims-integration/nbproject/
+
+### vs code
+*.settings
+*.vscode/
+*.classpath
+*.factorypath
+*.project
+
+### node modules
+node_modules/
+node_modules/
+/aims-modules/aims-data-allocation/nbproject/
+/aims-common/nbproject/
+node
+
+### Vue 
+package-lock.json
+
+# exel backup
+docs/~*.xlsx
+
+# IntelliJ
+.idea/
+*.iml
+/service-panel/nbproject/
+
+# Maven 
+dependency-reduced-pom.xml
+maven-metadata.xml 
+
