@@ -10,5 +10,7 @@ public interface Column {
 
     Class<?> getJavaType();
 
+    Table getTable();
+
 
 }

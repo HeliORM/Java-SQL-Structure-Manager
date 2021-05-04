@@ -5,4 +5,8 @@ public interface Driver {
      String getDatabaseName(Database database);
 
     String getTableName(Table table);
+
+    String getCreateType(Column column);
+
+    String getColumnName(Column column);
 }

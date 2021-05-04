@@ -21,7 +21,7 @@ public class SqlManager {
 
     public List<Action> verifyTable(Table table) throws SqlManagerException {
         if (!tableExists(table)) {
-            Collections.singletonList(createTable(table));
+            return Collections.singletonList(createTable(table));
         } else {
             return verifyStructure(table);
         }
@@ -52,9 +52,9 @@ public class SqlManager {
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
             Map<String, Column> tableColumns = table.getColumns().stream()
-                    .collect(Collectors.toMap(col -> col.getName(),col -> col));
+                    .collect(Collectors.toMap(col -> col.getName(), col -> col));
             Map<String, Column> sqlColumns = new HashMap<>();
-            try (ResultSet columns = dbm.getColumns(null, null,tableName(table), null)) {
+            try (ResultSet columns = dbm.getColumns(null, null, tableName(table), null)) {
                 while (columns.next()) {
                     Column column = getColumnFromResultSet(columns);
                     sqlColumns.put(column.getName(), column);
@@ -64,9 +64,8 @@ public class SqlManager {
             for (String name : tableColumns.keySet()) {
                 Column tableColumn = tableColumns.get(name);
                 if (!sqlColumns.containsKey(name)) {
-                    actions.add(addColumn(tableColum));
-                }
-                else {
+                    actions.add(addColumn(tableColumn));
+                } else {
                     Column sqlColumn = sqlColumns.get(name);
                     if (!tableColumn.equals(sqlColumn)) {
                         actions.add(modifyColumn(sqlColumn, tableColumn));
@@ -81,18 +80,106 @@ public class SqlManager {
                     }
                 }
             }
+            return actions;
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error verifying table '%s' (%s)", ex.getMessage()));
+            throw new SqlManagerException(format("Error verifying table '%s' (%s)", table.getName(), ex.getMessage()));
         }
     }
 
+    private Action modifyColumn(Column current, Column changed) throws SqlManagerException {
+        if (!current.getName().equals(changed.getName())) {
+            return renameColumn(current, changed);
+        }
+        else {
+            return changeColumn(current, changed);
+        }
+    }
+
+    private Action changeColumn(Column current, Column changed) throws SqlManagerException {
+        String sql = makeChangeColumnQuery(current, changed);
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(sql);
+            return Action.renameColumn(current, changed);
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error adding changing '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+    private Action renameColumn(Column current, Column changed) throws SqlManagerException {
+        String sql = makeRenameColumnQuery(current, changed);
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(sql);
+            return Action.renameColumn(current, changed);
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error adding renaming '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+    private Action deleteColumn(Column column) throws SqlManagerException {
+        String sql = makeDeleteColumnQuery(column);
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(sql);
+            return Action.deleteColumn(column);
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+
+    private Action addColumn(Column column) throws SqlManagerException {
+        String sql = makeAddColumnQuery(column);
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(sql);
+            return Action.addColumn(column);
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+    private String makeRenameColumnQuery(Column current, Column changed) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("ALTER TABLE %s RENAME COLUMN %s TO %s",
+                tableName(current.getTable()),
+                columnName(current),
+                columnName(changed)));
+        return sql.toString();
+    }
+
+
+    private String makeDeleteColumnQuery(Column column) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("ALTER TABLE %s DROP COLUMN %s",
+                tableName(column.getTable()),
+                columnName(column)));
+        return sql.toString();
+    }
+
+    private String makeChangeColumnQuery(Column current, Column changed) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("ALTER TABLE %s MODIFY COLUMN %s",
+                tableName(current.getTable()),
+                driver.getCreateType(changed)));
+        return sql.toString();
+    }
+
+    private String makeAddColumnQuery(Column column) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("ALTER TABLE %s ADD COLUMN %s",
+                tableName(column.getTable()),
+                driver.getCreateType(column)));
+        return sql.toString();
+    }
+
     private String makeCreateTableQuery(Table table) {
+        StringJoiner body = new StringJoiner(",");
+        for (Column column : table.getColumns()) {
+            body.add(format("%s %s", columnName(column), driver.getCreateType(column)));
+        }
         StringBuilder sql = new StringBuilder();
         sql.append(format("CREATE TABLE %s (", tableName(table)));
-        for (Column column  : table.getColumns()) {
-            sql.append()
-        }
+        sql.append(body.toString());
         sql.append(")");
+        return sql.toString();
     }
 
     private Column getColumnFromResultSet(ResultSet rs) throws SqlManagerException {
@@ -121,6 +208,9 @@ public class SqlManager {
         return driver.getTableName(table);
     }
 
+    private String columnName(Column column) {
+        return driver.getColumnName(column);
+    }
 
 
 }
