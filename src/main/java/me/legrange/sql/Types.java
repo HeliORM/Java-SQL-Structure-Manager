@@ -1,6 +1,5 @@
 package me.legrange.sql;
 
-import jdk.nashorn.internal.scripts.JD;
 
 import java.math.BigDecimal;
 import java.sql.Date;

@@ -63,4 +63,12 @@ public final class Action {
     public String getMessage() {
         return message;
     }
+
+    @Override
+    public String toString() {
+        return "Action{" +
+                "type=" + type +
+                ", message='" + message + '\'' +
+                '}';
+    }
 }
