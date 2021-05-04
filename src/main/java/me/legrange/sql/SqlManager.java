@@ -30,6 +30,50 @@ public class SqlManager {
         this.driver = driver;
     }
 
+    public Database scanDatabase(String name) throws SqlManagerException {
+        SqlDatabase database = new SqlDatabase(name);
+        try (Connection con = con()) {
+            DatabaseMetaData dbm = con.getMetaData();
+            try (ResultSet tables = dbm.getTables(null, null, null, null)) {
+                while (tables.next()) {
+                    database.addTable(scanTable(database, tables.getString("TABLE_NAME")));
+                }
+            }
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error scanning database '%s' (%s)", name, ex.getMessage()));
+        }
+        return database;
+    }
+
+    public Table scanTable(Database database, String name) throws SqlManagerException {
+        try (Connection con = con()) {
+            DatabaseMetaData dbm = con.getMetaData();
+            SqlTable table = new SqlTable(database, name);
+            Map<String, SqlColumn> sqlColumns = new HashMap<>();
+            try (ResultSet columns = dbm.getColumns(null, null, tableName(table), null)) {
+                while (columns.next()) {
+                    SqlColumn column = getColumnFromResultSet(table, columns);
+                    sqlColumns.put(column.getName(), column);
+                }
+            }
+            try (ResultSet keys = dbm.getPrimaryKeys(null, null, tableName(table))) {
+                while (keys.next()) {
+                    SqlColumn column = sqlColumns.get(keys.getString("COLUMN_NAME"));
+                    if (column == null) {
+                        throw new SqlManagerException(format("Cannot find column '%s' in table '%s' yet it is a primary key", keys.getString("COLUMN_NAME"), table.getName()));
+                    }
+                    column.setKey(true);
+                }
+            }
+            for (Column column : sqlColumns.values()) {
+                table.addColumn(column);
+            }
+            return table;
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error scanning table '%s' (%s)", name, ex.getMessage()));
+        }
+    }
+
     public List<Action> verifyTable(Table table) throws SqlManagerException {
         if (!tableExists(table)) {
             return Collections.singletonList(createTable(table));
@@ -45,7 +89,7 @@ public class SqlManager {
                 return tables.next();
             }
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error checking table '%s' (%s)", ex.getMessage()));
+            throw new SqlManagerException(format("Error checking table '%s' (%s)", table.getName(), ex.getMessage()));
         }
     }
 
@@ -109,8 +153,7 @@ public class SqlManager {
     private Action modifyColumn(Column current, Column changed) throws SqlManagerException {
         if (!current.getName().equals(changed.getName())) {
             return renameColumn(current, changed);
-        }
-        else {
+        } else {
             return changeColumn(current, changed);
         }
     }
@@ -217,8 +260,8 @@ public class SqlManager {
                 default:
                     size = Optional.empty();
             }
-            boolean nullable  = rs.getString("IS_NULLABLE").equals("YES");
-            boolean autoIncrement  = rs.getString("IS_AUTOINCREMENT").equals("YES");
+            boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
+            boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             return new SqlColumn(table,
                     rs.getString("COLUMN_NAME"),
                     jdbcType,
@@ -226,7 +269,7 @@ public class SqlManager {
                     size,
                     nullable,
                     autoIncrement
-                    );
+            );
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()));
         }
