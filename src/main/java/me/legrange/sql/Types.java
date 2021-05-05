@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import static java.lang.String.format;
+
 class Types {
 
     private static final Map<JDBCType, Class<?>> jdbcTypeToClass = new HashMap<>();

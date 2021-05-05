@@ -188,7 +188,6 @@ public class SqlManager {
         }
     }
 
-
     private Action addColumn(Column column) throws SqlManagerException {
         String sql = makeAddColumnQuery(column);
         try (Connection con = con(); Statement stmt = con.createStatement()) {
@@ -207,7 +206,6 @@ public class SqlManager {
                 columnName(changed)));
         return sql.toString();
     }
-
 
     private String makeDeleteColumnQuery(Column column) {
         StringBuilder sql = new StringBuilder();
@@ -292,6 +290,5 @@ public class SqlManager {
     private String columnName(Column column) {
         return driver.getColumnName(column);
     }
-
 
 }
