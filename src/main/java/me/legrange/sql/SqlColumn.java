@@ -72,4 +72,18 @@ class SqlColumn implements Column {
     public boolean isAutoIncrement() {
         return autoIncrement;
     }
+
+    @Override
+    public String toString() {
+        return "SqlColumn{" +
+                "table=" + table +
+                ", name='" + name + '\'' +
+                ", jdbcType=" + jdbcType +
+                ", javaType=" + javaType +
+                ", length=" + length +
+                ", nullable=" + nullable +
+                ", key=" + key +
+                ", autoIncrement=" + autoIncrement +
+                '}';
+    }
 }

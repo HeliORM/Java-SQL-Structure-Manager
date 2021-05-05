@@ -93,4 +93,18 @@ public class TestColumn implements Column {
         result = 31 * result + (length != null ? length.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "TestColumn{" +
+                "table=" + table +
+                ", name='" + name + '\'' +
+                ", jdbcType=" + jdbcType +
+                ", javaType=" + javaType +
+                ", length=" + length +
+                ", nullable=" + nullable +
+                ", key=" + key +
+                ", autoIncrement=" + autoIncrement +
+                '}';
+    }
 }

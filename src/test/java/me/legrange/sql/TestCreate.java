@@ -20,7 +20,7 @@ public class TestCreate extends AbstractSqlTest {
         TestTable table = new TestTable(db, "Person");
         table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, Integer.class, Optional.empty(), false, true, true));
         table.addColumn(new TestColumn(table, "name", JDBCType.VARCHAR, String.class, Optional.of(42), false, false, false));
-        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT, String.class));
+        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT, Integer.class));
         table.addColumn(new TestColumn(table, "sex", JDBCType.BIT, Boolean.class, Optional.empty(), false, false, false));
         List<Action> actions = manager.verifyTable(table);
         Table loaded = manager.scanTable(db, "Person");
@@ -51,13 +51,17 @@ public class TestCreate extends AbstractSqlTest {
     }
 
     private boolean isSameColumn(Column one, Column other) {
-        return one.isAutoIncrement() == other.isAutoIncrement()
+        boolean same =  one.isAutoIncrement() == other.isAutoIncrement()
                 && one.isNullable() == other.isNullable()
                 && one.isKey() == other.isKey()
                 && one.getLength().equals(other.getLength())
                 && one.getName().equals(other.getName())
                 && one.getJavaType().equals(other.getJavaType())
                 && one.getJdbcType().equals(other.getJdbcType());
+        if (!same) {
+            System.out.println("" + one + "\nvs\n" + other);
+        }
+        return same;
     }
 
 }
