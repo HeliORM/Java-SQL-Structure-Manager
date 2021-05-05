@@ -23,11 +23,15 @@ public class SqlManager {
 
     private final Supplier<Connection> supplier;
     private final Driver driver;
-    private final boolean deleteMissingColumns = false;
+    private boolean deleteMissingColumns = false;
 
     SqlManager(Supplier<Connection> supplier, Driver driver) {
         this.supplier = supplier;
         this.driver = driver;
+    }
+
+    void setDeleteMissingColumns(boolean delete) {
+        this.deleteMissingColumns = delete;
     }
 
     public Database scanDatabase(String name) throws SqlManagerException {

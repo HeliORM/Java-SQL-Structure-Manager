@@ -1,6 +1,8 @@
 package me.legrange.sql;
 
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.sql.JDBCType;
 import java.util.List;
@@ -10,11 +12,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
+@TestMethodOrder(OrderAnnotation.class)
 public class TestCreate extends AbstractSqlTest {
 
-
     @Test
+    @Order(1)
     public void createTable() throws SqlManagerException {
         TestDatabase db = new TestDatabase("neutral");
         TestTable table = new TestTable(db, "Person");
@@ -24,7 +28,36 @@ public class TestCreate extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "sex", JDBCType.BIT, Boolean.class, Optional.empty(), false, false, false));
         List<Action> actions = manager.verifyTable(table);
         Table loaded = manager.scanTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we created is same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we created must be the same as the one loaded ");
+    }
+
+    @Test
+    @Order(2)
+    public void addColumnToTable() throws SqlManagerException {
+        TestDatabase db = new TestDatabase("neutral");
+        TestTable table = new TestTable(db, "Person");
+        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, Integer.class, Optional.empty(), false, true, true));
+        table.addColumn(new TestColumn(table, "name", JDBCType.VARCHAR, String.class, Optional.of(42), false, false, false));
+        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT, Integer.class));
+        table.addColumn(new TestColumn(table, "sex", JDBCType.BIT, Boolean.class, Optional.empty(), false, false, false));
+        table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR, String.class, Optional.of(128), false, false, false));
+        List<Action> actions = manager.verifyTable(table);
+        Table loaded = manager.scanTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+    }
+
+    @Test
+    @Order(3)
+    public void deleteColumnFromTable() throws SqlManagerException {
+        TestDatabase db = new TestDatabase("neutral");
+        TestTable table = new TestTable(db, "Person");
+        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, Integer.class, Optional.empty(), false, true, true));
+        table.addColumn(new TestColumn(table, "name", JDBCType.VARCHAR, String.class, Optional.of(42), false, false, false));
+        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT, Integer.class));
+        table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR, String.class, Optional.of(128), false, false, false));
+        List<Action> actions = manager.verifyTable(table);
+        Table loaded = manager.scanTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
     }
 
     private boolean isSameTable(Table one, TestTable other) {

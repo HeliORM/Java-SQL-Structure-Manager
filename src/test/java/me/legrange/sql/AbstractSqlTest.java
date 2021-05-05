@@ -8,20 +8,12 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeAll;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 class AbstractSqlTest {
 
     private static DataSource jdbcDataSource;
     protected static SqlManager manager;
-    private static Connection getConnection() {
-        try {
-            return jdbcDataSource.getConnection();
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage(), ex);
-        }
-    }
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -49,8 +41,8 @@ class AbstractSqlTest {
                 throw new RuntimeException(ex.getMessage(), ex);
             }
         }, driver);
+         manager.setDeleteMissingColumns(true);
     }
-
 
     protected static final void say(String fmt, Object... args) {
         System.out.printf(fmt, args);
