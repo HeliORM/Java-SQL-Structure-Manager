@@ -13,6 +13,7 @@ import java.sql.SQLException;
 class AbstractSqlTest {
 
     private static DataSource jdbcDataSource;
+    protected static SqlModeller modeller;
     protected static SqlManager manager;
 
     @BeforeAll
@@ -42,6 +43,13 @@ class AbstractSqlTest {
             }
         }, driver);
          manager.setDeleteMissingColumns(true);
+         modeller = new SqlModeller(() -> {
+             try {
+                 return jdbcDataSource.getConnection();
+             } catch (SQLException ex) {
+                 throw new RuntimeException(ex.getMessage(), ex);
+             }
+         }, driver);
     }
 
     protected static final void say(String fmt, Object... args) {

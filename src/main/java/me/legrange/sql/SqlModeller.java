@@ -31,7 +31,7 @@ public class SqlModeller {
      *
      * @param name The name of the database to read
      * @return The model
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem reading the model
      */
     public Database readDatabase(String name) throws SqlManagerException {
         SqlDatabase database = new SqlDatabase(name);
@@ -54,7 +54,7 @@ public class SqlModeller {
      * @param database The database for the table
      * @param name     The name of the table
      * @return The table model
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem reading the model
      */
     public Table readTable(Database database, String name) throws SqlManagerException {
         try (Connection con = con()) {
@@ -85,18 +85,49 @@ public class SqlModeller {
         }
     }
 
+    /** Deterime if a table exists in SQL
+     *
+     * @param table The table
+     * @return Does it exist?
+     * @throws SqlManagerException Thrown if there is a problem
+     */
+    public boolean tableExists(Table table) throws SqlManagerException {
+        try (Connection con = con()) {
+            DatabaseMetaData dbm = con.getMetaData();
+            try (ResultSet tables = dbm.getTables(databaseName(table), null, tableName(table), null)) {
+                return tables.next();
+            }
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error checking table '%s' (%s)", table.getName(), ex.getMessage()));
+        }
+    }
+
     /**
      * Create a table based on a table model.
      *
      * @param table The table model
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem creating the table
      */
     public void createTable(Table table) throws SqlManagerException {
-        String sql = makeCreateTableQuery(table);
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate(makeCreateTableQuery(table));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()));
+        }
+    }
+
+
+    /**
+     * Delete a table from SQL
+     *
+     * @param table The table model
+     * @throws SqlManagerException Thrown if there is a problem deleting the table
+     */
+    public void deleteTable(Table table) throws SqlManagerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(makeDeleteTableQuery(table));
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()));
         }
     }
 
@@ -105,12 +136,11 @@ public class SqlModeller {
      * Add a column to a table.
      *
      * @param column The column to add
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem adding the column
      */
     public void addColumn(Column column) throws SqlManagerException {
-        String sql = makeAddColumnQuery(column);
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate(makeAddColumnQuery(column));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
@@ -120,12 +150,11 @@ public class SqlModeller {
      *
      * @param current
      * @param changed
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem reaming the column
      */
     public void renameColumn(Column current, Column changed) throws SqlManagerException {
-        String sql = makeRenameColumnQuery(current, changed);
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate(makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding renaming '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -135,12 +164,11 @@ public class SqlModeller {
     /** Delete a column from SQL
      *
      * @param column The column to delete
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem deleting the column
      */
     public void deleteColumn(Column column) throws SqlManagerException {
-        String sql = makeDeleteColumnQuery(column);
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate(makeDeleteColumnQuery(column));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
@@ -149,12 +177,11 @@ public class SqlModeller {
     /** Modify a column in SQL.
      *
      * @param current The current column
-     * @throws SqlManagerException
+     * @throws SqlManagerException Thrown if there is a problem modifying the model
      */
     public void modifyColumn(Column current) throws SqlManagerException {
-        String sql = makeModifyColumnQuery(current);
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding changing '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -168,12 +195,10 @@ public class SqlModeller {
      * @return The SQL query
      */
     private String makeRenameColumnQuery(Column column, Column changed) {
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("ALTER TABLE %s RENAME COLUMN %s TO %s",
+        return format("ALTER TABLE %s RENAME COLUMN %s TO %s",
                 tableName(column.getTable()),
                 columnName(column),
-                columnName(changed)));
-        return sql.toString();
+                columnName(changed));
     }
 
     /**
@@ -183,11 +208,9 @@ public class SqlModeller {
      * @return The SQL query
      */
     private String makeDeleteColumnQuery(Column column) {
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("ALTER TABLE %s DROP COLUMN %s",
+        return format("ALTER TABLE %s DROP COLUMN %s",
                 tableName(column.getTable()),
-                columnName(column)));
-        return sql.toString();
+                columnName(column));
     }
 
     /**
@@ -197,12 +220,10 @@ public class SqlModeller {
      * @return The SQL query
      */
     private String makeModifyColumnQuery(Column column) {
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("ALTER TABLE %s MODIFY COLUMN %s %s",
+        return format("ALTER TABLE %s MODIFY COLUMN %s %s",
                 tableName(column.getTable()),
                 columnName(column),
-                driver.getCreateType(column)));
-        return sql.toString();
+                driver.getCreateType(column));
     }
 
     /**
@@ -212,12 +233,10 @@ public class SqlModeller {
      * @return The SQL query
      */
     private String makeAddColumnQuery(Column column) {
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("ALTER TABLE %s ADD COLUMN %s %s",
+        return format("ALTER TABLE %s ADD COLUMN %s %s",
                 tableName(column.getTable()),
                 columnName(column),
-                driver.getCreateType(column)));
-        return sql.toString();
+                driver.getCreateType(column));
     }
 
     /**
@@ -274,6 +293,25 @@ public class SqlModeller {
         return sql.toString();
     }
 
+    /**
+     * Make a SQL query to delete a table.
+     *
+     * @param table The table
+     * @return The SQL query
+     */
+    private String makeDeleteTableQuery(Table table) {
+        return format("DROP TABLE %s", tableName(table));
+    }
+
+    /** Get the SQL database name for a table
+     *
+     * @param table The table
+     * @return The database name
+     */
+    private String databaseName(Table table) {
+        return driver.getDatabaseName(table.getDatabase());
+
+    }
 
     /**
      * Get the SQL table name from the given table.

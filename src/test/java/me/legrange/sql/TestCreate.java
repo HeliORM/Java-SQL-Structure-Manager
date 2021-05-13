@@ -27,7 +27,7 @@ public class TestCreate extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT, Integer.class));
         table.addColumn(new TestColumn(table, "sex", JDBCType.BIT, Boolean.class, Optional.empty(), false, false, false));
         List<Action> actions = manager.verifyTable(table);
-        Table loaded = manager.scanTable(db, "Person");
+        Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we created must be the same as the one loaded ");
     }
 
@@ -42,7 +42,7 @@ public class TestCreate extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "sex", JDBCType.BIT, Boolean.class, Optional.empty(), false, false, false));
         table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR, String.class, Optional.of(128), false, false, false));
         List<Action> actions = manager.verifyTable(table);
-        Table loaded = manager.scanTable(db, "Person");
+        Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
     }
 
@@ -56,7 +56,7 @@ public class TestCreate extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT, Integer.class));
         table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR, String.class, Optional.of(128), false, false, false));
         List<Action> actions = manager.verifyTable(table);
-        Table loaded = manager.scanTable(db, "Person");
+        Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
     }
 
