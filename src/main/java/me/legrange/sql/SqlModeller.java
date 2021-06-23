@@ -79,6 +79,16 @@ public class SqlModeller {
             for (Column column : sqlColumns.values()) {
                 table.addColumn(column);
             }
+            try (ResultSet indexes = dbm.getIndexInfo(null, null, tableName(table), true, false)) {
+                while (indexes.next()) {
+                    String index_name = indexes.getString("INDEX_NAME");
+                    String column_name = indexes.getString("COLUMN_NAME");
+                    boolean non_unique = indexes.getBoolean("NON_UNIQUE");
+                    short type = indexes.getShort("TYPE");
+                    int ordinal_position = indexes.getInt("ORDINAL_POSITION");
+                    System.out.printf("%s %s %b %d %d\n", index_name, column_name, non_unique, type, ordinal_position);
+                }
+            }
             return table;
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error scanning table '%s' (%s)", name, ex.getMessage()));

@@ -10,6 +10,9 @@ import org.junit.jupiter.api.BeforeAll;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 class AbstractSqlTest {
 
@@ -85,6 +88,70 @@ class AbstractSqlTest {
         HikariDataSource ds = new HikariDataSource(conf);
         return ds;
     }
+
+    protected boolean isSameTable(Table one, TestTable other) {
+        return one.getDatabase().getName().equals(other.getDatabase().getName())
+                && isSameColumns(one.getColumns(), other.getColumns())
+               && isSameIndexes(one.getIndexes(), other.getIndexes());
+    }
+
+    protected boolean isSameColumns(Set<Column> one, Set<Column> other) {
+        if (one.size() != other.size()) {
+            return false;
+        }
+        Map<String, Column> oneMap = one.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        Map<String, Column> otherMap = other.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        for (String name : oneMap.keySet()) {
+            if (!otherMap.containsKey(name)) {
+                return false;
+            }
+            if (!isSameColumn(oneMap.get(name), otherMap.get(name))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean isSameColumn(Column one, Column other) {
+        boolean same = one.isAutoIncrement() == other.isAutoIncrement()
+                && one.isNullable() == other.isNullable()
+                && one.isKey() == other.isKey()
+                && one.getLength().equals(other.getLength())
+                && one.getName().equals(other.getName())
+                && one.getJavaType().equals(other.getJavaType())
+                && one.getJdbcType().equals(other.getJdbcType());
+        if (!same) {
+            System.out.println("" + one + "\nvs\n" + other);
+        }
+        return same;
+    }
+
+    protected boolean isSameIndexes(Set<Index> one, Set<Index>other) {
+        if (one.size() != other.size()) {
+            return false;
+        }
+        Map<String, Index> oneMap = one.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        Map<String, Index> otherMap = other.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        for (String name : oneMap.keySet()) {
+            if (!otherMap.containsKey(name)) {
+                return false;
+            }
+            if (!isSameIndex(oneMap.get(name), otherMap.get(name))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean isSameIndex(Index one, Index other) {
+        boolean same = one.getName().equals(other.getName())
+                && (one.isUnique() == other.isUnique());
+        if (same) {
+            return isSameColumns(one.getColumns(), other.getColumns());
+        }
+        return false;
+    }
+
 }
 
 
