@@ -61,7 +61,7 @@ public class SqlModeller {
             DatabaseMetaData dbm = con.getMetaData();
             SqlTable table = new SqlTable(database, name);
             Map<String, SqlColumn> sqlColumns = new HashMap<>();
-            try (ResultSet columns = dbm.getColumns(null, null, tableName(table), null)) {
+            try (ResultSet columns = dbm.getColumns(databaseName(database), null, tableName(table), "%")) {
                 while (columns.next()) {
                     SqlColumn column = getColumnFromResultSet(table, columns);
                     sqlColumns.put(column.getName(), column);
@@ -92,14 +92,7 @@ public class SqlModeller {
      * @throws SqlManagerException Thrown if there is a problem
      */
     public boolean tableExists(Table table) throws SqlManagerException {
-        try (Connection con = con()) {
-            DatabaseMetaData dbm = con.getMetaData();
-            try (ResultSet tables = dbm.getTables(databaseName(table), null, tableName(table), null)) {
-                return tables.next();
-            }
-        } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error checking table '%s' (%s)", table.getName(), ex.getMessage()));
-        }
+        return tableExists(table.getDatabase(), tableName(table));
     }
 
     /**
@@ -184,6 +177,25 @@ public class SqlModeller {
             stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding changing '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+
+    /** Deterime if a table exists in a database in SQL
+     *
+     * @param db The database
+     * @param tableName The table name
+     * @return Does it exist?
+     * @throws SqlManagerException Thrown if there is a problem
+     */
+    private boolean tableExists(Database db, String tableName) throws SqlManagerException {
+        try (Connection con = con()) {
+            DatabaseMetaData dbm = con.getMetaData();
+            try (ResultSet tables = dbm.getTables(databaseName(db), null, tableName, null)) {
+                return tables.next();
+            }
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error checking table '%s' (%s)", tableName, ex.getMessage()));
         }
     }
 
@@ -309,8 +321,12 @@ public class SqlModeller {
      * @return The database name
      */
     private String databaseName(Table table) {
-        return driver.getDatabaseName(table.getDatabase());
+        return databaseName(table.getDatabase());
 
+    }
+
+    private String databaseName(Database database) {
+        return driver.getDatabaseName(database);
     }
 
     /**

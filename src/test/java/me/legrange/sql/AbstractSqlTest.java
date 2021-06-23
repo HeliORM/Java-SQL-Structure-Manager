@@ -4,6 +4,7 @@ package me.legrange.sql;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.legrange.sql.driver.MySql;
+import me.legrange.sql.driver.PostgreSql;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -28,6 +29,7 @@ class AbstractSqlTest {
                 break;
             case "postgresql":
                 jdbcDataSource = setupPostgreSqlDatasource();
+                driver = new PostgreSql();
                 break;
             case "h2":
             default:
@@ -59,7 +61,7 @@ class AbstractSqlTest {
 
     private static DataSource setupH2DataSource() {
         JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;DATABASE_TO_UPPER=false");
+        jdbcDataSource.setUrl("jdbc:h2:~/neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;DATABASE_TO_UPPER=false;WRITE_DELAY=0");
         return jdbcDataSource;
     }
 
