@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import java.sql.JDBCType;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -16,8 +17,6 @@ import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 @TestMethodOrder(OrderAnnotation.class)
 public class TestCRUD extends AbstractSqlTest {
 
-    private static TestDatabase db = new TestDatabase("neutral");
-    private static TestTable table = new TestTable(db, "Person");
 
     @Test
     @Order(1)
@@ -61,6 +60,21 @@ public class TestCRUD extends AbstractSqlTest {
         TestColumn name = new TestColumn(table, "name", JDBCType.VARCHAR, String.class, Optional.of(64), true, false, false);
         table.addColumn(name);
         modeller.modifyColumn(name);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+    }
+
+    @Test
+    @Order(5)
+    public void addIndexToTable() throws SqlManagerException {
+        Column email = table.getColumns().stream()
+                .filter(column ->  column.getName().equals("name"))
+                .findFirst().get();
+        Set<Column> columns = new HashSet<>();
+        columns.add(email);
+        TestIndex index = new TestIndex(table, "index0", true, columns);
+        table.addIndex(index);
+        modeller.addIndex(index);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
     }

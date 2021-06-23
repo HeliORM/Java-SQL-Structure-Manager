@@ -3,6 +3,7 @@ package me.legrange.sql.driver;
 import me.legrange.sql.Column;
 import me.legrange.sql.Database;
 import me.legrange.sql.Driver;
+import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
@@ -52,4 +53,11 @@ public class MySql implements Driver {
     public String getColumnName(Column column) {
         return format("`%s`", column.getName());
     }
+
+
+    @Override
+    public String getIndexName(Index index) {
+        return format("`%s`", index.getName());
+    }
+
 }

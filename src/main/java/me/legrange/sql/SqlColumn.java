@@ -3,7 +3,7 @@ package me.legrange.sql;
 import java.sql.JDBCType;
 import java.util.Optional;
 
-class SqlColumn implements Column {
+final class SqlColumn implements Column {
 
     private final Table table;
     private final String name;

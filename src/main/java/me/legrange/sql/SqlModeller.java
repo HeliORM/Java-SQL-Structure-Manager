@@ -176,10 +176,17 @@ public class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error adding changing '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlManagerException(format("Error adding column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
 
+    public void addIndex(Index index) throws SqlManagerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(makeAddIndexQuery(index));
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+        }
+    }
 
     /** Deterime if a table exists in a database in SQL
      *
@@ -249,6 +256,22 @@ public class SqlModeller {
                 tableName(column.getTable()),
                 columnName(column),
                 driver.getCreateType(column));
+    }
+
+    /**
+     * Make a SQL query to add a index to a table
+     *
+     * @param index The index model
+     * @return The SQL query
+     */
+    private String makeAddIndexQuery(Index index) {
+        return format("CREATE %sINDEX %s on %s (%s)",
+                index.isUnique() ? "UNIQUE " : "",
+                indexName(index),
+                tableName(index.getTable()),
+                index.getColumns().stream()
+                        .map(column ->  columnName(column))
+                        .reduce((c1,c2) -> c1 +"," + c2).get());
     }
 
     /**
@@ -348,6 +371,17 @@ public class SqlModeller {
      */
     private String columnName(Column column) {
         return driver.getColumnName(column);
+    }
+
+
+    /**
+     * Get the SQL index name from the given column
+     *
+     * @param index The index model
+     * @return The SQL index name
+     */
+    private String indexName(Index index) {
+        return driver.getIndexName(index);
     }
 
 

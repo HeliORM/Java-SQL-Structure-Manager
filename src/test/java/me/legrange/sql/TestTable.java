@@ -26,6 +26,7 @@ class TestTable implements Table {
     void deleteColumn(Column column) {
         columns.remove(column.getName());
     }
+
     void addIndex(Index index) {
         indexes.add(index);
     }

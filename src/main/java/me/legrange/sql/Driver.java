@@ -9,4 +9,6 @@ public interface Driver {
     String getCreateType(Column column);
 
     String getColumnName(Column column);
+
+    String getIndexName(Index index);
 }

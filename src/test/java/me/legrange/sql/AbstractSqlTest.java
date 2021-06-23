@@ -16,6 +16,8 @@ class AbstractSqlTest {
     private static DataSource jdbcDataSource;
     protected static SqlModeller modeller;
     protected static SqlManager manager;
+    protected static TestDatabase db = new TestDatabase("neutral");
+    protected static TestTable table = new TestTable(db, "Person");
 
     @BeforeAll
     public static void setup() throws Exception {
