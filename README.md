@@ -1,1 +1,1 @@
-# neutral-sql
+# java-sq-structure
