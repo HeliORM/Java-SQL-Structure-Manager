@@ -4,12 +4,17 @@ import static java.lang.String.format;
 
 public final class Action {
 
+
+
     public enum Type {
         CREATE_TABLE,
         ADD_COLUMN,
         DELETE_COLUMN,
         MODIFY_COLUMN,
-        RENAME_COLUMN;
+        RENAME_COLUMN,
+        ADD_INDEX,
+        MODIFY_INDEX,
+        DELETE_INDEX;
     }
 
     private final Type type;
@@ -49,6 +54,28 @@ public final class Action {
         return new Action(Type.CREATE_TABLE,
                 format("Created table %s in database %s",
                         table.getName(), table.getDatabase().getName()));
+    }
+
+    static Action addIndex(Index index) {
+        return new Action(Type.ADD_INDEX,
+                format("Created index %s on table %s in database %s",
+                        index.getName(),
+                        index.getTable().getName(),
+                        index.getTable().getDatabase().getName()));
+    }
+
+     static Action deleteIndex(Index index) {
+         return new Action(Type.DELETE_INDEX, format("Deleted index %s from table %s in database %s",
+                 index.getName(),
+                 index.getTable().getName(),
+                 index.getTable().getDatabase().getName()));
+    }
+
+    static Action modifyIndex(Index index) {
+        return new Action(Type.MODIFY_INDEX, format("Modified index %s in table %s in database %s",
+                index.getName(),
+                index.getTable().getName(),
+                index.getTable().getDatabase().getName()));
     }
 
     private Action(Type type, String message) {

@@ -18,7 +18,7 @@ class AbstractSqlTest {
 
     private static DataSource jdbcDataSource;
     protected static SqlModeller modeller;
-    protected static SqlManager manager;
+    protected static SqlVerifier manager;
     protected static TestDatabase db = new TestDatabase("neutral");
     protected static TestTable table = new TestTable(db, "Person");
 
@@ -42,7 +42,7 @@ class AbstractSqlTest {
                 jdbcDataSource = setupH2DataSource();
         }
         say("Using %s data source", dbType);
-         manager = new SqlManager(() -> {
+         manager = new SqlVerifier(() -> {
             try {
                 return jdbcDataSource.getConnection();
             } catch (SQLException ex) {
