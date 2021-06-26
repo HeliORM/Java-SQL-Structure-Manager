@@ -84,4 +84,9 @@ public class PostgreSql implements Driver {
     public String getIndexName(Index index) {
         return format("\"%s\"", index.getName());
     }
+
+    @Override
+    public boolean supportsAlterIndex() {
+        return true;
+    }
 }

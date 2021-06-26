@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import java.sql.JDBCType;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -54,7 +52,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(4)
-    public void alterColumnOnTable() throws SqlManagerException {
+    public void modifyColumnOnTable() throws SqlManagerException {
         TestColumn name = new TestColumn(table, "name", JDBCType.VARCHAR, String.class, Optional.of(64), true, false, false);
         table.addColumn(name);
         modeller.modifyColumn(name);
@@ -65,14 +63,32 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(5)
     public void addIndexToTable() throws SqlManagerException {
-        Column email = table.getColumns().stream()
-                .filter(column ->  column.getName().equals("name"))
-                .findFirst().get();
-        Set<Column> columns = new HashSet<>();
-        columns.add(email);
-        TestIndex index = new TestIndex(table, "index0", true, columns);
+        TestIndex index = new TestIndex(table, "index0", true);
+        index.addColumn(table.getColumn("name"));
         table.addIndex(index);
         modeller.addIndex(index);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+    }
+
+    @Test
+    @Order(6)
+    public void modifyIndexOnTable() throws SqlManagerException {
+        TestIndex index = (TestIndex) table.getIndex("index0");
+        index.addColumn(table.getColumn("age"));
+        table.addIndex(index);
+        modeller.modifyIndex(index);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+    }
+
+
+    @Test
+    @Order(7)
+    public void removeIndexFromTable() throws SqlManagerException {
+        Index index =table.getIndex("index0");
+        table.removeIndex(index);
+        modeller.removeIndex(index);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
     }

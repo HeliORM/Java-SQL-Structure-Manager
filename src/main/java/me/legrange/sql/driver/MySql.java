@@ -60,4 +60,8 @@ public class MySql implements Driver {
         return format("`%s`", index.getName());
     }
 
+    @Override
+    public boolean supportsAlterIndex() {
+        return false;
+    }
 }

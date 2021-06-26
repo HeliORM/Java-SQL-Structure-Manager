@@ -11,4 +11,6 @@ public interface Driver {
     String getColumnName(Column column);
 
     String getIndexName(Index index);
+
+    boolean supportsAlterIndex();
 }

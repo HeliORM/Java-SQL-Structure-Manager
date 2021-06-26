@@ -10,13 +10,13 @@ class TestTable implements Table {
    private final Database database;
    private final String name;
    private final Map<String, Column> columns;
-   private final Set<Index> indexes;
+   private final Map<String, Index> indexes;
 
     public TestTable(Database database, String name) {
         this.database = database;
         this.name = name;
         this.columns = new HashMap<>();
-        this.indexes = new HashSet<>();
+        this.indexes = new HashMap<>();
     }
 
     void addColumn(Column column) {
@@ -28,7 +28,11 @@ class TestTable implements Table {
     }
 
     void addIndex(Index index) {
-        indexes.add(index);
+        indexes.put(index.getName(), index);
+    }
+
+    void removeIndex(Index index) {
+        indexes.remove(index.getName());
     }
 
     @Override
@@ -47,7 +51,17 @@ class TestTable implements Table {
     }
 
     @Override
+    public Column getColumn(String name) {
+        return columns.get(name);
+    }
+
+    @Override
     public Set<Index> getIndexes() {
-        return indexes;
+        return new HashSet<>(indexes.values());
+    }
+
+    @Override
+    public Index getIndex(String name) {
+        return indexes.get(name);
     }
 }

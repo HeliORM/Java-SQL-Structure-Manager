@@ -1,6 +1,11 @@
 package me.legrange.sql;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.JDBCType;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -61,13 +66,13 @@ public class SqlModeller {
             DatabaseMetaData dbm = con.getMetaData();
             SqlTable table = new SqlTable(database, name);
             Map<String, SqlColumn> sqlColumns = new HashMap<>();
-            try (ResultSet columns = dbm.getColumns(databaseName(database), null, tableName(table), "%")) {
+            try (ResultSet columns = dbm.getColumns(database.getName(), null, table.getName(), "%")) {
                 while (columns.next()) {
                     SqlColumn column = getColumnFromResultSet(table, columns);
                     sqlColumns.put(column.getName(), column);
                 }
             }
-            try (ResultSet keys = dbm.getPrimaryKeys(null, null, tableName(table))) {
+            try (ResultSet keys = dbm.getPrimaryKeys(database.getName(), null, table.getName())) {
                 while (keys.next()) {
                     SqlColumn column = sqlColumns.get(keys.getString("COLUMN_NAME"));
                     if (column == null) {
@@ -79,14 +84,26 @@ public class SqlModeller {
             for (Column column : sqlColumns.values()) {
                 table.addColumn(column);
             }
-            try (ResultSet indexes = dbm.getIndexInfo(null, null, tableName(table), true, false)) {
+            try (ResultSet indexes = dbm.getIndexInfo(database.getName(), null, table.getName(), true, false)) {
+                Map<String, SqlIndex> idxMap = new HashMap<>();
                 while (indexes.next()) {
                     String index_name = indexes.getString("INDEX_NAME");
                     String column_name = indexes.getString("COLUMN_NAME");
                     boolean non_unique = indexes.getBoolean("NON_UNIQUE");
                     short type = indexes.getShort("TYPE");
                     int ordinal_position = indexes.getInt("ORDINAL_POSITION");
-                    System.out.printf("%s %s %b %d %d\n", index_name, column_name, non_unique, type, ordinal_position);
+                    SqlIndex sqlIndex;
+                    if (idxMap.containsKey(index_name)) {
+                        sqlIndex = idxMap.get(index_name);
+                    } else {
+                        sqlIndex = new SqlIndex(table, index_name, !non_unique);
+                        idxMap.put(index_name, sqlIndex);
+                    }
+                    sqlIndex.addColunm(table.getColumn(column_name));
+                }
+                for (Index index : idxMap.values()) {
+                    if (!index.getName().equals("PRIMARY"))
+                        table.addIndex(index);
                 }
             }
             return table;
@@ -95,14 +112,15 @@ public class SqlModeller {
         }
     }
 
-    /** Deterime if a table exists in SQL
+    /**
+     * Deterime if a table exists in SQL
      *
      * @param table The table
      * @return Does it exist?
      * @throws SqlManagerException Thrown if there is a problem
      */
     public boolean tableExists(Table table) throws SqlManagerException {
-        return tableExists(table.getDatabase(), tableName(table));
+        return tableExists(table.getDatabase(), table.getName());
     }
 
     /**
@@ -149,7 +167,8 @@ public class SqlModeller {
         }
     }
 
-    /** Rename a column.
+    /**
+     * Rename a column.
      *
      * @param current
      * @param changed
@@ -164,7 +183,8 @@ public class SqlModeller {
     }
 
 
-    /** Delete a column from SQL
+    /**
+     * Delete a column from SQL
      *
      * @param column The column to delete
      * @throws SqlManagerException Thrown if there is a problem deleting the column
@@ -177,7 +197,8 @@ public class SqlModeller {
         }
     }
 
-    /** Modify a column in SQL.
+    /**
+     * Modify a column in SQL.
      *
      * @param current The current column
      * @throws SqlManagerException Thrown if there is a problem modifying the model
@@ -190,6 +211,12 @@ public class SqlModeller {
         }
     }
 
+    /**
+     * Add an index to a SQL table.
+     *
+     * @param index The index to add
+     * @throws SqlManagerException
+     */
     public void addIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddIndexQuery(index));
@@ -198,9 +225,60 @@ public class SqlModeller {
         }
     }
 
-    /** Deterime if a table exists in a database in SQL
+    /**
+     * Rename an index on a SQL table.
      *
-     * @param db The database
+     * @param current The index to modify
+     * @param changed The changed index
+     * @throws SqlManagerException
+     */
+    public void renameIndex(Index current, Index changed) throws SqlManagerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(makeRenameIndexQuery(current, changed));
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+        }
+
+    }
+
+    /**
+     * Modify an index on a SQL table
+     *
+     * @param index The index to modify
+     * @throws SqlManagerException
+     */
+    public void modifyIndex(Index index) throws SqlManagerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            if (driver.supportsAlterIndex()) {
+                stmt.executeUpdate(makeModifyIndexQuery(index));
+            }
+            else {
+                removeIndex(index);
+                addIndex(index);
+            }
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error modifying index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+    /**
+     * Remove an index from a SQL table.
+     *
+     * @param index The index to remove
+     * @throws SqlManagerException
+     */
+    public void removeIndex(Index index) throws SqlManagerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(makeRemoveIndexQuery(index));
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error removing index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+    /**
+     * Deterime if a table exists in a database in SQL
+     *
+     * @param db        The database
      * @param tableName The table name
      * @return Does it exist?
      * @throws SqlManagerException Thrown if there is a problem
@@ -219,7 +297,7 @@ public class SqlModeller {
     /**
      * Make a SQL query to rename a column in a table
      *
-     * @param column The column model
+     * @param column  The column model
      * @param changed The changed column model
      * @return The SQL query
      */
@@ -269,7 +347,7 @@ public class SqlModeller {
     }
 
     /**
-     * Make a SQL query to add a index to a table
+     * Make a SQL query to add an index to a table
      *
      * @param index The index model
      * @return The SQL query
@@ -280,8 +358,44 @@ public class SqlModeller {
                 indexName(index),
                 tableName(index.getTable()),
                 index.getColumns().stream()
-                        .map(column ->  columnName(column))
-                        .reduce((c1,c2) -> c1 +"," + c2).get());
+                        .map(column -> columnName(column))
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
+    }
+
+    /**
+     * Make a SQL query to rename an index on a table
+     *
+     * @param current The current index model
+     * @param changed The changed index model
+     * @return The SQL query
+     */
+    private String makeRenameIndexQuery(Index current, Index changed) {
+        return format("ALTER TABLE INDEX %s RENAME INDEX %s to %s",
+                tableName(current.getTable()),
+                indexName(current),
+                indexName(changed));
+    }
+
+    private String makeModifyIndexQuery(Index index) {
+        return format("ALTER %sINDEX %s ON %s %",
+                index.isUnique() ? "UNIQUE " : "",
+                indexName(index),
+                tableName(index.getTable()),
+                index.getColumns().stream()
+                        .map(column -> columnName(column))
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
+    }
+
+    /**
+     * Make a SQL query to remove an index from a table
+     *
+     * @param index The index model
+     * @return The SQL query
+     */
+    private String makeRemoveIndexQuery(Index index) {
+        return format("DROP INDEX %s on %s",
+                indexName(index),
+                tableName(index.getTable()));
     }
 
     /**
@@ -348,7 +462,8 @@ public class SqlModeller {
         return format("DROP TABLE %s", tableName(table));
     }
 
-    /** Get the SQL database name for a table
+    /**
+     * Get the SQL database name for a table
      *
      * @param table The table
      * @return The database name

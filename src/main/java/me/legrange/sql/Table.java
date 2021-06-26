@@ -10,5 +10,9 @@ public interface Table {
 
     Set<Column> getColumns();
 
+    Column getColumn(String name);
+
     Set<Index> getIndexes();
+
+    Index getIndex(String name);
 }

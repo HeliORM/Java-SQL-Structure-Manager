@@ -1,14 +1,16 @@
 package me.legrange.sql;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 final class SqlTable implements Table {
 
     private final Database database;
     private final String name;
-    private final Set<Column> columns = new HashSet<>();
-    private final Set<Index> indexes = new HashSet<>();
+    private final Map<String, Column> columns = new HashMap<>();
+    private final Map<String, Index> indexes = new HashMap<>();
 
     SqlTable(Database database, String name) {
         this.database = database;
@@ -16,11 +18,11 @@ final class SqlTable implements Table {
     }
 
     void addColumn(Column column) {
-        this.columns.add(column);
+        columns.put(column.getName(), column);
     }
 
     void addIndex(Index index) {
-        this.indexes.add(index);
+        indexes.put(index.getName(), index);
     }
 
     @Override
@@ -35,11 +37,21 @@ final class SqlTable implements Table {
 
     @Override
     public Set<Column> getColumns() {
-        return columns;
+        return new HashSet(columns.values());
     }
 
     @Override
     public Set<Index> getIndexes() {
-        return indexes;
+        return new HashSet(indexes.values());
+    }
+
+    @Override
+    public Column getColumn(String name) {
+        return columns.get(name);
+    }
+
+    @Override
+    public Index getIndex(String name) {
+        return indexes.get(name);
     }
 }
