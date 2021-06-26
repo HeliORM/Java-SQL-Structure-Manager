@@ -276,6 +276,20 @@ public class SqlModeller {
     }
 
     /**
+     *  Remove a table
+     *
+     * @param table The table to remove
+     * @throws SqlManagerException
+     */
+    public void removeTable(Table  table) throws SqlManagerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(makeRemoveTableQuery(table));
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error removing table '%s' (%s)", table.getName(), ex.getMessage()));
+        }
+    }
+
+    /**
      * Deterime if a table exists in a database in SQL
      *
      * @param db        The database
@@ -450,6 +464,16 @@ public class SqlModeller {
         sql.append(body.toString());
         sql.append(")");
         return sql.toString();
+    }
+
+    /**
+     * Make a SQL query to remove a table.
+     *
+     * @param table The table
+     * @return The SQL query
+     */
+    private String makeRemoveTableQuery(Table table) {
+        return format("DROP TABLE %s", tableName(table));
     }
 
     /**

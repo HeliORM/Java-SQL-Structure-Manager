@@ -93,6 +93,11 @@ public class TestCRUD extends AbstractSqlTest {
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
     }
 
-
+    @Test
+    @Order(8)
+    public void removeTable() throws SqlManagerException {
+        modeller.removeTable(table);
+        assertTrue(!modeller.tableExists(table), "Table must not exist any more");
+    }
 
 }
