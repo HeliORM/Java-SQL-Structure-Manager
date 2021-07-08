@@ -1,5 +1,7 @@
 package me.legrange.sql;
 
+import me.legrange.sql.driver.MySqlDriver;
+
 public interface Driver {
 
     String getDatabaseName(Database database);
@@ -13,4 +15,8 @@ public interface Driver {
     String getIndexName(Index index);
 
     boolean supportsAlterIndex();
+
+    static Driver mysql() {
+        return new MySqlDriver();
+    }
 }

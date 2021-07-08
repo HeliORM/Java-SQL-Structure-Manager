@@ -10,7 +10,13 @@ import java.sql.JDBCType;
 
 import static java.lang.String.format;
 
-public class MySql implements Driver {
+public class MySqlDriver implements Driver {
+
+
+    public MySqlDriver() {
+
+    }
+
     @Override
     public String getDatabaseName(Database database) {
         return format("`%s`", database.getName());

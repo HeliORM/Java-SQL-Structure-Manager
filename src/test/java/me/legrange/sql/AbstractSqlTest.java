@@ -3,7 +3,7 @@ package me.legrange.sql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import me.legrange.sql.driver.MySql;
+import me.legrange.sql.driver.MySqlDriver;
 import me.legrange.sql.driver.PostgreSql;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,7 +30,7 @@ class AbstractSqlTest {
         switch (dbType) {
             case "mysql":
                 jdbcDataSource = setupMysqlDataSource();
-                driver = new MySql();
+                driver = new MySqlDriver();
                 break;
             case "postgresql":
                 jdbcDataSource = setupPostgreSqlDatasource();
@@ -38,11 +38,11 @@ class AbstractSqlTest {
                 break;
             case "h2":
             default:
-                driver = new MySql();
+                driver = new MySqlDriver();
                 jdbcDataSource = setupH2DataSource();
         }
         say("Using %s data source", dbType);
-         manager = new SqlVerifier(() -> {
+         manager = SqlVerifier.forPool(() -> {
             try {
                 return jdbcDataSource.getConnection();
             } catch (SQLException ex) {

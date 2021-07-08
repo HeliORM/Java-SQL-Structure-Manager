@@ -8,14 +8,18 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class SqlVerifier {
+public final class SqlVerifier {
 
     private final Supplier<Connection> supplier;
     private final Driver driver;
     private final SqlModeller modeller;
     private boolean deleteMissingColumns = false;
 
-    SqlVerifier(Supplier<Connection> supplier, Driver driver) {
+    public static SqlVerifier forPool(Supplier<Connection> supplier, Driver driver) {
+        return new SqlVerifier(supplier, driver);
+    }
+
+    private SqlVerifier(Supplier<Connection> supplier, Driver driver) {
         this.supplier = supplier;
         this.driver = driver;
         this.modeller = new SqlModeller(supplier, driver);
