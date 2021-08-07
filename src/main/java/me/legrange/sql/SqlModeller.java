@@ -178,7 +178,7 @@ public class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error adding renaming '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlManagerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -207,7 +207,7 @@ public class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error adding column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlManagerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
 
