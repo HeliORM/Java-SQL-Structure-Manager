@@ -10,7 +10,28 @@ import java.sql.JDBCType;
 
 import static java.lang.String.format;
 
-public class PostgreSql extends GenericSqlDriver {
+public final class PostgreSql extends GenericSqlDriver {
+
+    @Override
+    public String makeModifyColumnQuery(Column column) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getCreateType(column)));
+        if (column.isNullable()) {
+            sql.append(format("ALTER TABLE %s ALTER COLUMN %s DROP NOT NULL",
+                    getTableName(column.getTable()),
+                    getColumnName(column)));
+        }
+        else {
+            sql.append(format("ALTER TABLE %s ALTER COLUMN %s SET NOT NULL",
+                    getTableName(column.getTable()),
+                    getColumnName(column)));
+
+        }
+        return sql.toString();
+    }
 
     @Override
     public String getDatabaseName(Database database) {

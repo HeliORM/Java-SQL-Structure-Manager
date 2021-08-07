@@ -101,8 +101,8 @@ public class SqlModeller {
                     sqlIndex.addColunm(table.getColumn(column_name));
                 }
                 for (Index index : idxMap.values()) {
-                    if (!index.getName().equals("PRIMARY"))
-                        table.addIndex(index);
+//                    if (!index.getName().equals("PRIMARY"))
+//                        table.addIndex(index);
                 }
             }
             return table;
