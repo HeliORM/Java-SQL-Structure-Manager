@@ -26,24 +26,43 @@ class Types {
     }
 
     static {
-        addType(JDBCType.CHAR, String.class);
-        addType(JDBCType.VARCHAR, String.class);
-        addType(JDBCType.LONGNVARCHAR, String.class);
-        addType(JDBCType.NUMERIC, BigDecimal.class);
-        addType(JDBCType.DECIMAL, BigDecimal.class);
+        addType(JDBCType.ARRAY, byte[].class);
+
         addType(JDBCType.BIT, Boolean.class);
-        addType(JDBCType.TINYINT, Integer.class);
-        addType(JDBCType.SMALLINT, Integer.class);
-        addType(JDBCType.INTEGER, Integer.class);
         addType(JDBCType.BIGINT, Long.class);
-        addType(JDBCType.REAL, Float.class);
-        addType(JDBCType.FLOAT, Double.class);
-        addType(JDBCType.DOUBLE, Double.class);
         addType(JDBCType.BINARY, byte[].class);
-        addType(JDBCType.VARBINARY, byte[].class);
-        addType(JDBCType.LONGVARBINARY, byte[].class);
+        addType(JDBCType.BOOLEAN, Boolean.class);
+        addType(JDBCType.BLOB, byte[].class);
+
+        addType(JDBCType.CHAR, String.class);
+        addType(JDBCType.CLOB, byte[].class);
+
         addType(JDBCType.DATE, Date.class);
+        addType(JDBCType.DECIMAL, Double.class);
+        addType(JDBCType.DOUBLE, Double.class);
+
+        addType(JDBCType.FLOAT, Double.class);
+
+        addType(JDBCType.INTEGER, Integer.class);
+
+        addType(JDBCType.LONGVARBINARY, byte[].class);
+        addType(JDBCType.LONGNVARCHAR, String.class);
+        addType(JDBCType.LONGVARCHAR, String.class);
+
+        addType(JDBCType.NCLOB, byte[].class);
+        addType(JDBCType.NCHAR, Character.class);
+        addType(JDBCType.NUMERIC, Double.class);
+
+        addType(JDBCType.REAL, Float.class);
+
+        addType(JDBCType.SMALLINT, Integer.class);
+
         addType(JDBCType.TIME, Time.class);
         addType(JDBCType.TIMESTAMP, Timestamp.class);
+        addType(JDBCType.TINYINT, Integer.class);
+
+        addType(JDBCType.VARBINARY, byte[].class);
+        addType(JDBCType.VARCHAR, String.class);
+
     }
 }

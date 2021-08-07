@@ -86,4 +86,20 @@ final class SqlColumn implements Column {
                 ", autoIncrement=" + autoIncrement +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Column) {
+            Column that = (Column) obj;
+            return this.length.equals(that.getLength())
+                    && this.name.equals(that.getName())
+                    && this.javaType.equals(that.getJavaType())
+                    && this.getTable().getName().equals(that.getTable().getName())
+                    && this.nullable == that.isNullable()
+                    && this.key == that.isKey()
+                    && this.autoIncrement == that.isAutoIncrement();
+        }
+        return false;
+    }
+
 }
