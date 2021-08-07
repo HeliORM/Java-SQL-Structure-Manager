@@ -118,7 +118,6 @@ class AbstractSqlTest {
                 && one.isKey() == other.isKey()
                 && one.getLength().equals(other.getLength())
                 && one.getName().equals(other.getName())
-                && one.getJavaType().equals(other.getJavaType())
                 && one.getJdbcType().equals(other.getJdbcType());
         if (!same) {
             System.out.println("" + one + "\nvs\n" + other);

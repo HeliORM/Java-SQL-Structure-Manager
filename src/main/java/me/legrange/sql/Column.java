@@ -9,8 +9,6 @@ public interface Column {
 
     JDBCType getJdbcType();
 
-    Class<?> getJavaType();
-
     Table getTable();
 
     Optional<Integer> getLength();

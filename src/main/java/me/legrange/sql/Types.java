@@ -18,12 +18,6 @@ class Types {
         jdbcTypeToClass.put(jdbcType, javaType);
     }
 
-    static Class<?> findJavaType(JDBCType jdbcType) throws SqlManagerException {
-        if (!jdbcTypeToClass.containsKey(jdbcType)) {
-            throw new SqlManagerException(format("Cannot determine Java type for JDBC type '%s'", jdbcType));
-        }
-        return jdbcTypeToClass.get(jdbcType);
-    }
 
     static {
         addType(JDBCType.ARRAY, byte[].class);

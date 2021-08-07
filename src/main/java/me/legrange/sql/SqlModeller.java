@@ -13,7 +13,6 @@ import java.util.StringJoiner;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
-import static me.legrange.sql.Types.findJavaType;
 
 public class SqlModeller {
 
@@ -334,7 +333,6 @@ public class SqlModeller {
             return new SqlColumn(table,
                     rs.getString("COLUMN_NAME"),
                     jdbcType,
-                    findJavaType(jdbcType),
                     size,
                     nullable,
                     autoIncrement
