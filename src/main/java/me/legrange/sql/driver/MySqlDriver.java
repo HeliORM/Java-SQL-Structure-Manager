@@ -7,15 +7,18 @@ import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
+import java.util.StringJoiner;
 
 import static java.lang.String.format;
 
-public class MySqlDriver implements Driver {
+public class MySqlDriver extends GenericSqlDriver {
 
 
     public MySqlDriver() {
 
     }
+
+
 
     @Override
     public String getDatabaseName(Database database) {

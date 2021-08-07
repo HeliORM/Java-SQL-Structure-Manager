@@ -131,7 +131,7 @@ public class SqlModeller {
      */
     public void createTable(Table table) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeCreateTableQuery(table));
+            stmt.executeUpdate(driver.makeCreateTableQuery(table));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()));
         }
@@ -146,7 +146,7 @@ public class SqlModeller {
      */
     public void deleteTable(Table table) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeDeleteTableQuery(table));
+            stmt.executeUpdate(driver.makeDeleteTableQuery(table));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()));
         }
@@ -161,7 +161,7 @@ public class SqlModeller {
      */
     public void addColumn(Column column) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeAddColumnQuery(column));
+            stmt.executeUpdate(driver.makeAddColumnQuery(column));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
@@ -176,7 +176,7 @@ public class SqlModeller {
      */
     public void renameColumn(Column current, Column changed) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeRenameColumnQuery(current, changed));
+            stmt.executeUpdate(driver.makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -191,7 +191,7 @@ public class SqlModeller {
      */
     public void deleteColumn(Column column) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeDeleteColumnQuery(column));
+            stmt.executeUpdate(driver.makeDeleteColumnQuery(column));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
@@ -205,7 +205,7 @@ public class SqlModeller {
      */
     public void modifyColumn(Column current) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeModifyColumnQuery(current));
+            stmt.executeUpdate(driver.makeModifyColumnQuery(current));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -219,7 +219,7 @@ public class SqlModeller {
      */
     public void addIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeAddIndexQuery(index));
+            stmt.executeUpdate(driver.makeAddIndexQuery(index));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
@@ -234,7 +234,7 @@ public class SqlModeller {
      */
     public void renameIndex(Index current, Index changed) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeRenameIndexQuery(current, changed));
+            stmt.executeUpdate(driver.makeRenameIndexQuery(current, changed));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -250,7 +250,7 @@ public class SqlModeller {
     public void modifyIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             if (driver.supportsAlterIndex()) {
-                stmt.executeUpdate(makeModifyIndexQuery(index));
+                stmt.executeUpdate(driver.makeModifyIndexQuery(index));
             }
             else {
                 removeIndex(index);
@@ -269,7 +269,7 @@ public class SqlModeller {
      */
     public void removeIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeRemoveIndexQuery(index));
+            stmt.executeUpdate(driver.makeRemoveIndexQuery(index));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error removing index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
@@ -283,7 +283,7 @@ public class SqlModeller {
      */
     public void removeTable(Table  table) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(makeRemoveTableQuery(table));
+            stmt.executeUpdate(driver.makeRemoveTableQuery(table));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error removing table '%s' (%s)", table.getName(), ex.getMessage()));
         }
@@ -306,110 +306,6 @@ public class SqlModeller {
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error checking table '%s' (%s)", tableName, ex.getMessage()));
         }
-    }
-
-    /**
-     * Make a SQL query to rename a column in a table
-     *
-     * @param column  The column model
-     * @param changed The changed column model
-     * @return The SQL query
-     */
-    private String makeRenameColumnQuery(Column column, Column changed) {
-        return format("ALTER TABLE %s RENAME COLUMN %s TO %s",
-                tableName(column.getTable()),
-                columnName(column),
-                columnName(changed));
-    }
-
-    /**
-     * Make a SQL query to delete a column from a table
-     *
-     * @param column The column model
-     * @return The SQL query
-     */
-    private String makeDeleteColumnQuery(Column column) {
-        return format("ALTER TABLE %s DROP COLUMN %s",
-                tableName(column.getTable()),
-                columnName(column));
-    }
-
-    /**
-     * Make a SQL query to modify a column in a table
-     *
-     * @param column The column model
-     * @return The SQL query
-     */
-    private String makeModifyColumnQuery(Column column) {
-        return format("ALTER TABLE %s MODIFY COLUMN %s %s",
-                tableName(column.getTable()),
-                columnName(column),
-                driver.getCreateType(column));
-    }
-
-    /**
-     * Make a SQL query to add a column to a table
-     *
-     * @param column The column model
-     * @return The SQL query
-     */
-    private String makeAddColumnQuery(Column column) {
-        return format("ALTER TABLE %s ADD COLUMN %s %s",
-                tableName(column.getTable()),
-                columnName(column),
-                driver.getCreateType(column));
-    }
-
-    /**
-     * Make a SQL query to add an index to a table
-     *
-     * @param index The index model
-     * @return The SQL query
-     */
-    private String makeAddIndexQuery(Index index) {
-        return format("CREATE %sINDEX %s on %s (%s)",
-                index.isUnique() ? "UNIQUE " : "",
-                indexName(index),
-                tableName(index.getTable()),
-                index.getColumns().stream()
-                        .map(column -> columnName(column))
-                        .reduce((c1, c2) -> c1 + "," + c2).get());
-    }
-
-    /**
-     * Make a SQL query to rename an index on a table
-     *
-     * @param current The current index model
-     * @param changed The changed index model
-     * @return The SQL query
-     */
-    private String makeRenameIndexQuery(Index current, Index changed) {
-        return format("ALTER TABLE INDEX %s RENAME INDEX %s to %s",
-                tableName(current.getTable()),
-                indexName(current),
-                indexName(changed));
-    }
-
-    private String makeModifyIndexQuery(Index index) {
-        return format("ALTER %sINDEX %s ON %s %",
-                index.isUnique() ? "UNIQUE " : "",
-                indexName(index),
-                tableName(index.getTable()),
-                index.getColumns().stream()
-                        .map(column -> columnName(column))
-                        .reduce((c1, c2) -> c1 + "," + c2).get());
-    }
-
-    /**
-     * Make a SQL query to remove an index from a table
-     *
-     * @param index The index model
-     * @return The SQL query
-     */
-    private String makeRemoveIndexQuery(Index index) {
-        return format("DROP INDEX %s on %s",
-                indexName(index),
-                tableName(index.getTable()));
     }
 
     /**
@@ -448,95 +344,12 @@ public class SqlModeller {
         }
     }
 
-    /**
-     * Make a SQL query to create a table.
-     *
-     * @param table The table
-     * @return The SQL query
-     */
-    private String makeCreateTableQuery(Table table) {
-        StringJoiner body = new StringJoiner(",");
-        for (Column column : table.getColumns()) {
-            body.add(format("%s %s", columnName(column), driver.getCreateType(column)));
-        }
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("CREATE TABLE %s (", tableName(table)));
-        sql.append(body.toString());
-        sql.append(")");
-        return sql.toString();
-    }
-
-    /**
-     * Make a SQL query to remove a table.
-     *
-     * @param table The table
-     * @return The SQL query
-     */
-    private String makeRemoveTableQuery(Table table) {
-        return format("DROP TABLE %s", tableName(table));
-    }
-
-    /**
-     * Make a SQL query to delete a table.
-     *
-     * @param table The table
-     * @return The SQL query
-     */
-    private String makeDeleteTableQuery(Table table) {
-        return format("DROP TABLE %s", tableName(table));
-    }
-
-    /**
-     * Get the SQL database name for a table
-     *
-     * @param table The table
-     * @return The database name
-     */
-    private String databaseName(Table table) {
-        return databaseName(table.getDatabase());
-
-    }
-
     private String databaseName(Database database) {
         return driver.getDatabaseName(database);
     }
 
-    /**
-     * Get the SQL table name from the given table.
-     *
-     * @param table The table
-     * @return The SQL table name
-     */
-    private String tableName(Table table) {
-        return driver.getTableName(table);
-    }
-
-
-    /**
-     * Get the SQL column name from the given column
-     *
-     * @param column The column model
-     * @return The SQL column name
-     */
-    private String columnName(Column column) {
-        return driver.getColumnName(column);
-    }
-
-
-    /**
-     * Get the SQL index name from the given column
-     *
-     * @param index The index model
-     * @return The SQL index name
-     */
-    private String indexName(Index index) {
-        return driver.getIndexName(index);
-    }
-
-
     private Connection con() {
         return supplier.get();
     }
-
 
 }

@@ -10,7 +10,8 @@ import java.sql.JDBCType;
 
 import static java.lang.String.format;
 
-public class PostgreSql implements Driver {
+public class PostgreSql extends GenericSqlDriver {
+
     @Override
     public String getDatabaseName(Database database) {
         return format("\"%s\"", database.getName());
