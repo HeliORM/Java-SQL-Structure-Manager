@@ -29,7 +29,7 @@ public class PostgreSql extends GenericSqlDriver {
         switch (column.getJdbcType()) {
             case BIT :
             case BOOLEAN:
-                typeName = JDBCType.BIT.getName();
+                typeName = JDBCType.BOOLEAN.getName();
                 break;
             case TINYINT:
                 if (column.isKey() && column.isAutoIncrement()) {

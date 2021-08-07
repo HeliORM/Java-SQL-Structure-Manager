@@ -1,6 +1,7 @@
 package me.legrange.sql;
 
 import me.legrange.sql.driver.MySqlDriver;
+import me.legrange.sql.driver.PostgreSql;
 
 import static java.lang.String.format;
 
@@ -109,4 +110,9 @@ public interface Driver {
     static Driver mysql() {
         return new MySqlDriver();
     }
+
+    static Driver posgresql() {
+        return new PostgreSql();
+    }
+
 }

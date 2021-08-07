@@ -30,15 +30,15 @@ class AbstractSqlTest {
         switch (dbType) {
             case "mysql":
                 jdbcDataSource = setupMysqlDataSource();
-                driver = new MySqlDriver();
+                driver = Driver.mysql();
                 break;
             case "postgresql":
                 jdbcDataSource = setupPostgreSqlDatasource();
-                driver = new PostgreSql();
+                driver = Driver.posgresql();
                 break;
             case "h2":
             default:
-                driver = new MySqlDriver();
+                driver = Driver.mysql();
                 jdbcDataSource = setupH2DataSource();
         }
         say("Using %s data source", dbType);
@@ -97,12 +97,14 @@ class AbstractSqlTest {
 
     protected boolean isSameColumns(Set<Column> one, Set<Column> other) {
         if (one.size() != other.size()) {
+            say("Columns: one.size %d != other.size %d", one.size(), other.size());
             return false;
         }
         Map<String, Column> oneMap = one.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
         Map<String, Column> otherMap = other.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
         for (String name : oneMap.keySet()) {
             if (!otherMap.containsKey(name)) {
+                say("other doesn't have %s", name);
                 return false;
             }
             if (!isSameColumn(oneMap.get(name), otherMap.get(name))) {
@@ -120,13 +122,15 @@ class AbstractSqlTest {
                 && one.getName().equals(other.getName())
                 && one.getJdbcType().equals(other.getJdbcType());
         if (!same) {
-            System.out.println("" + one + "\nvs\n" + other);
+            say("one %s\n\tvs\nother %s", one, other);
+
         }
         return same;
     }
 
     protected boolean isSameIndexes(Set<Index> one, Set<Index>other) {
         if (one.size() != other.size()) {
+            say("Indexes: one.size %d != other.size %d", one.size(), other.size());
             return false;
         }
         Map<String, Index> oneMap = one.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));

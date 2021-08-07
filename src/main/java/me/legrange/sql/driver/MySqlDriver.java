@@ -18,8 +18,6 @@ public class MySqlDriver extends GenericSqlDriver {
 
     }
 
-
-
     @Override
     public String getDatabaseName(Database database) {
         return format("`%s`", database.getName());
