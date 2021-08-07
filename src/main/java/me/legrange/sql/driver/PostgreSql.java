@@ -70,6 +70,9 @@ public class PostgreSql extends GenericSqlDriver {
         if (column.getLength().isPresent()) {
             type.append(format("(%d)", column.getLength().get()));
         }
+        if (column.isKey()) {
+            type.append(" PRIMARY KEY");
+        }
         if (!column.isNullable()) {
             type.append(" NOT NULL");
         }
