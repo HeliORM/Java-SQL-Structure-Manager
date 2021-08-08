@@ -101,6 +101,20 @@ public final class PostgreSql extends GenericSqlDriver {
     }
 
     @Override
+    public String makeRemoveIndexQuery(Index index) {
+        return format("DROP INDEX IF EXISTS %s", getIndexName(index));
+    }
+
+    @Override
+    public String makeModifyIndexQuery(Index index) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(makeRemoveIndexQuery(index));
+        sql.append(";");
+        sql.append(makeAddIndexQuery(index));
+        return sql.toString();
+    }
+
+    @Override
     public String getColumnName(Column column) {
         return format("\"%s\"", column.getName());
     }

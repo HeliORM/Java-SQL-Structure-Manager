@@ -51,7 +51,7 @@ abstract class GenericSqlDriver implements Driver {
 
     @Override
     public String makeModifyIndexQuery(Index index) {
-        return format("ALTER %sINDEX %s ON %s %",
+        return format("ALTER %sINDEX %s ON %s %s",
                 index.isUnique() ? "UNIQUE " : "",
                 getIndexName(index),
                 getTableName(index.getTable()),
