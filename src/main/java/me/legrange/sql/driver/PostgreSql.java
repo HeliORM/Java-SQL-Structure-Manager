@@ -2,11 +2,8 @@ package me.legrange.sql.driver;
 
 import me.legrange.sql.Column;
 import me.legrange.sql.Database;
-import me.legrange.sql.Driver;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
-
-import java.sql.JDBCType;
 
 import static java.lang.String.format;
 
@@ -48,10 +45,6 @@ public final class PostgreSql extends GenericSqlDriver {
         StringBuilder type = new StringBuilder();
         String typeName;
         switch (column.getJdbcType()) {
-            case BIT :
-            case BOOLEAN:
-                typeName = JDBCType.BOOLEAN.getName();
-                break;
             case TINYINT:
                 if (column.isKey() && column.isAutoIncrement()) {
                     typeName =  "SERIAL";

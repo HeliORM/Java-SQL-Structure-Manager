@@ -66,6 +66,12 @@ public class SqlModeller {
                 while (columns.next()) {
                     SqlColumn column = getColumnFromResultSet(table, columns);
                     sqlColumns.put(column.getName(), column);
+                    for (int i = 1; i <= columns.getMetaData().getColumnCount(); ++i) {
+                        String n = columns.getMetaData().getColumnName(i);
+                        String v = columns.getString(i);
+                        System.out.printf("# %s = %s \n", n,v);
+                    }
+                    System.out.println();
                 }
             }
             Set<String> keyNames = new HashSet<>();

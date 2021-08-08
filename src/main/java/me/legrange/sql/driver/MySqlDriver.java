@@ -5,8 +5,6 @@ import me.legrange.sql.Database;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
-import java.sql.JDBCType;
-
 import static java.lang.String.format;
 
 public class MySqlDriver extends GenericSqlDriver {
@@ -29,15 +27,7 @@ public class MySqlDriver extends GenericSqlDriver {
     @Override
     public String getCreateType(Column column) {
         StringBuilder type = new StringBuilder();
-        String typeName;
-        switch (column.getJdbcType()) {
-            case BIT :
-            case BOOLEAN:
-                typeName = JDBCType.BIT.getName();
-                break;
-            default:
-                typeName = column.getJdbcType().getName();
-        }
+        String typeName = column.getJdbcType().getName();
         type.append(typeName);
         if (column.getLength().isPresent()) {
             type.append(format("(%d)", column.getLength().get()));
