@@ -51,13 +51,24 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(4)
-    public void modifyColumnOnTable() throws SqlManagerException {
+    public void modifyColumnLength() throws SqlManagerException {
         TestColumn name = new TestColumn(table, "name", JDBCType.VARCHAR, Optional.of(64), true, false, false);
         table.addColumn(name);
         modeller.modifyColumn(name);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
+
+//    @Test
+//    @Order(4)
+    public void modifyColumnType() throws SqlManagerException {
+        TestColumn sex = new TestColumn(table, "sex", JDBCType.BOOLEAN, Optional.empty(), false, false, false);
+        table.addColumn(sex);
+        modeller.modifyColumn(sex);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
 
     @Test
     @Order(5)
