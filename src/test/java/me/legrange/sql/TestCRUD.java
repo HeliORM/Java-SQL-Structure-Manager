@@ -27,7 +27,7 @@ public class TestCRUD extends AbstractSqlTest {
         }
         modeller.createTable(table);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we created must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we created must be the same as the one loaded");
     }
 
     @Test
@@ -37,7 +37,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false));
         modeller.addColumn(email);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
     @Test
@@ -47,7 +47,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.deleteColumn(email);
         modeller.deleteColumn(email);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
     @Test
@@ -57,7 +57,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.addColumn(name);
         modeller.modifyColumn(name);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
     @Test
@@ -68,7 +68,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.addIndex(index);
         modeller.addIndex(index);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
     @Test
@@ -79,7 +79,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.addIndex(index);
         modeller.modifyIndex(index);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
 
@@ -90,7 +90,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.removeIndex(index);
         modeller.removeIndex(index);
         Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded ");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
     @Test

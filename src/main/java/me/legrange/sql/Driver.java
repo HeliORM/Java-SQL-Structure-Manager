@@ -82,7 +82,7 @@ public interface Driver {
      * @param column The column model
      * @return The SQL query
      */
-     String makeAddColumnQuery(Column column);
+    String makeAddColumnQuery(Column column);
 
     /**
      * Make a SQL query to add an index to a table
@@ -90,7 +90,7 @@ public interface Driver {
      * @param index The index model
      * @return The SQL query
      */
-     String makeAddIndexQuery(Index index) ;
+    String makeAddIndexQuery(Index index);
 
 
     //// -- old

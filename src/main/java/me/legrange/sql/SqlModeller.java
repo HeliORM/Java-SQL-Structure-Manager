@@ -6,10 +6,7 @@ import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
@@ -71,12 +68,15 @@ public class SqlModeller {
                     sqlColumns.put(column.getName(), column);
                 }
             }
+            Set<String> keyNames = new HashSet<>();
             try (ResultSet keys = dbm.getPrimaryKeys(database.getName(), null, table.getName())) {
                 while (keys.next()) {
                     SqlColumn column = sqlColumns.get(keys.getString("COLUMN_NAME"));
+                    String pkName = keys.getString("PK_NAME");
                     if (column == null) {
                         throw new SqlManagerException(format("Cannot find column '%s' in table '%s' yet it is a primary key", keys.getString("COLUMN_NAME"), table.getName()));
                     }
+                    keyNames.add(pkName);
                     column.setKey(true);
                 }
             }
@@ -89,8 +89,6 @@ public class SqlModeller {
                     String index_name = indexes.getString("INDEX_NAME");
                     String column_name = indexes.getString("COLUMN_NAME");
                     boolean non_unique = indexes.getBoolean("NON_UNIQUE");
-                    short type = indexes.getShort("TYPE");
-                    int ordinal_position = indexes.getInt("ORDINAL_POSITION");
                     SqlIndex sqlIndex;
                     if (idxMap.containsKey(index_name)) {
                         sqlIndex = idxMap.get(index_name);
@@ -101,8 +99,9 @@ public class SqlModeller {
                     sqlIndex.addColunm(table.getColumn(column_name));
                 }
                 for (Index index : idxMap.values()) {
-//                    if (!index.getName().equals("PRIMARY"))
-//                        table.addIndex(index);
+                    if (!keyNames.contains(index.getName())) {
+                        table.addIndex(index);
+                    }
                 }
             }
             return table;

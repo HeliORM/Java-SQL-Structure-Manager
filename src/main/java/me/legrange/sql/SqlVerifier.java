@@ -106,7 +106,6 @@ public final class SqlVerifier {
                 }
             }
         }
-
         return actions;
     }
 
