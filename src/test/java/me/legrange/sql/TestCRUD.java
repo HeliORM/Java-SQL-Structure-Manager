@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 @TestMethodOrder(OrderAnnotation.class)
 public class TestCRUD extends AbstractSqlTest {
 
-
     @Test
     @Order(1)
     public void createTable() throws SqlManagerException {
@@ -95,8 +94,8 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(8)
-    public void removeTable() throws SqlManagerException {
-        modeller.removeTable(table);
+    public void deleteTable() throws SqlManagerException {
+        modeller.deleteTable(table);
         assertTrue(!modeller.tableExists(table), "Table must not exist any more");
     }
 

@@ -25,11 +25,6 @@ abstract class GenericSqlDriver implements Driver {
     }
 
     @Override
-    public String makeRemoveTableQuery(Table table) {
-        return format("DROP TABLE %s", getTableName(table));
-    }
-
-    @Override
     public String makeDeleteTableQuery(Table table) {
         return format("DROP TABLE %s", getTableName(table));
     }

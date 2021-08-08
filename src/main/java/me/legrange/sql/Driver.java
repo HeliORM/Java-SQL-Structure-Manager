@@ -3,8 +3,6 @@ package me.legrange.sql;
 import me.legrange.sql.driver.MySqlDriver;
 import me.legrange.sql.driver.PostgreSql;
 
-import static java.lang.String.format;
-
 public interface Driver {
 
     /**
@@ -14,14 +12,6 @@ public interface Driver {
      * @return The SQL query
      */
     String makeCreateTableQuery(Table table);
-
-    /**
-     * Make a SQL query to remove a table.
-     *
-     * @param table The table
-     * @return The SQL query
-     */
-    String makeRemoveTableQuery(Table table);
 
     /**
      * Make a SQL query to delete a table.
@@ -48,7 +38,12 @@ public interface Driver {
      */
     String makeRenameIndexQuery(Index current, Index changed);
 
-
+    /**
+     * Make a SQL query to modify an index to a table
+     *
+     * @param index The index model
+     * @return The SQL query
+     */
     String makeModifyIndexQuery(Index index);
 
     /**

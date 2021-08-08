@@ -2,12 +2,10 @@ package me.legrange.sql.driver;
 
 import me.legrange.sql.Column;
 import me.legrange.sql.Database;
-import me.legrange.sql.Driver;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
-import java.util.StringJoiner;
 
 import static java.lang.String.format;
 

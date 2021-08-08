@@ -38,7 +38,7 @@ class AbstractSqlTest {
                 break;
             case "h2":
             default:
-                driver = Driver.mysql();
+                driver = Driver.posgresql();
                 jdbcDataSource = setupH2DataSource();
         }
         say("Using %s data source", dbType);
@@ -65,9 +65,20 @@ class AbstractSqlTest {
     }
 
     private static DataSource setupH2DataSource() {
-        JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:~/neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;DATABASE_TO_UPPER=false;WRITE_DELAY=0");
-        return jdbcDataSource;
+//        JdbcDataSource jdbcDataSource = new JdbcDataSource();
+//        jdbcDataSource.setUser("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
+////        jdbcDataSource.setUrl("jdbc:h2:~/neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;DATABASE_TO_UPPER=false;WRITE_DELAY=0");
+//        return jdbcDataSource;
+
+        HikariConfig conf = new HikariConfig();
+//        conf.setJdbcUrl(" jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;"+
+//                "INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;"+
+//                "DATABASE_TO_UPPER=false;WRITE_DELAY=0;CASE_INSENSITIVE_IDENTIFIERS=TRUE");
+        conf.setJdbcUrl("jdbc:h2:~/neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=POSTGRESQL;DATABASE_TO_UPPER=false;WRITE_DELAY=0");
+//        conf.setUsername("root");
+//        conf.setPassword("dev");
+        HikariDataSource ds = new HikariDataSource(conf);
+        return ds;
     }
 
     private static DataSource setupMysqlDataSource() throws SQLException {

@@ -150,7 +150,6 @@ public class SqlModeller {
         }
     }
 
-
     /**
      * Add a column to a table.
      *
@@ -273,19 +272,6 @@ public class SqlModeller {
         }
     }
 
-    /**
-     *  Remove a table
-     *
-     * @param table The table to remove
-     * @throws SqlManagerException
-     */
-    public void removeTable(Table  table) throws SqlManagerException {
-        try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeRemoveTableQuery(table));
-        } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error removing table '%s' (%s)", table.getName(), ex.getMessage()));
-        }
-    }
 
     /**
      * Deterime if a table exists in a database in SQL
