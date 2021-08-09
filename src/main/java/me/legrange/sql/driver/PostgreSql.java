@@ -11,21 +11,24 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeModifyColumnQuery(Column column) {
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;",
-                getTableName(column.getTable()),
-                getColumnName(column),
-                getCreateType(column)));
-        if (column.isNullable()) {
-            sql.append(format("ALTER TABLE %s ALTER COLUMN %s DROP NOT NULL",
-                    getTableName(column.getTable()),
-                    getColumnName(column)));
-        }
-        else {
-            sql.append(format("ALTER TABLE %s ALTER COLUMN %s SET NOT NULL",
-                    getTableName(column.getTable()),
-                    getColumnName(column)));
+        /* ALTER TABLE "Person"
+  ALTER sex DROP DEFAULT
+ ,ALTER sex TYPE bool USING (sex::text::bool)
+ ,ALTER sex SET NOT NULL
+ ,ALTER sex SET DEFAULT false;
 
+         */
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("ALTER TABLE %s", getTableName(column.getTable())));
+        sql.append(format("ALTER %s DROP DEFAULT", getColumnName(column)));
+        sql.append(format(",ALTER %s TYPE %s USING(%s::text::%s)",
+                getColumnName(column), createBasicType(column),
+                getColumnName(column),
+                typeName(column)));
+        if (!column.isNullable()) {
+            sql.append(format(",ALTER %s SET NOT NULL", getColumnName(column)));
+        } else {
+            sql.append(format(",ALTER %s DROP NOT NULL", getColumnName(column)));
         }
         return sql.toString();
     }
@@ -43,47 +46,7 @@ public final class PostgreSql extends GenericSqlDriver {
     @Override
     public String getCreateType(Column column) {
         StringBuilder type = new StringBuilder();
-        String typeName;
-        switch (column.getJdbcType()) {
-            case TINYINT:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName =  "SERIAL";
-                }
-                else {
-                    typeName = "TINYINT";
-                }
-                break;
-            case SMALLINT:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName =  "SERIAL";
-                }
-                else {
-                    typeName =  "SMALLINT";
-                }
-                break;
-            case INTEGER:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName =  "SERIAL";
-                }
-                else {
-                    typeName =  "INTEGER";
-                }
-                break;
-            case BIGINT:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName =  "BIGSERIAL";
-                }
-                else {
-                    typeName = "BIGINT";
-                }
-                break;
-            default:
-                typeName = column.getJdbcType().getName();
-        }
-        type.append(typeName);
-        if (column.getLength().isPresent()) {
-            type.append(format("(%d)", column.getLength().get()));
-        }
+        type.append(createBasicType(column));
         if (column.isKey()) {
             type.append(" PRIMARY KEY");
         }
@@ -120,5 +83,85 @@ public final class PostgreSql extends GenericSqlDriver {
     @Override
     public boolean supportsAlterIndex() {
         return true;
+    }
+
+    /**
+     * Create the basic type declaration for a coloumn excluding annotations like keys and nullability
+     *
+     * @param column The column
+     * @return The type declaration
+     */
+    private String createBasicType(Column column) {
+        StringBuilder type = new StringBuilder();
+        String typeName;
+        switch (column.getJdbcType()) {
+            case TINYINT:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    typeName = "SERIAL";
+                } else {
+                    typeName = "TINYINT";
+                }
+                break;
+            case SMALLINT:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    typeName = "SERIAL";
+                } else {
+                    typeName = "SMALLINT";
+                }
+                break;
+            case INTEGER:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    typeName = "SERIAL";
+                } else {
+                    typeName = "INTEGER";
+                }
+                break;
+            case BIGINT:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    typeName = "BIGSERIAL";
+                } else {
+                    typeName = "BIGINT";
+                }
+                break;
+            default:
+                typeName = column.getJdbcType().getName();
+        }
+        type.append(typeName);
+        if (column.getLength().isPresent()) {
+            type.append(format("(%d)", column.getLength().get()));
+        }
+        return type.toString();
+    }
+
+    private String typeName(Column column) {
+        switch (column.getJdbcType()) {
+            case TINYINT:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    return "SERIAL";
+                } else {
+                    return "TINYINT";
+                }
+            case SMALLINT:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    return "SERIAL";
+                } else {
+                    return "SMALLINT";
+                }
+            case INTEGER:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    return "SERIAL";
+                } else {
+                    return  "INTEGER";
+                }
+            case BIGINT:
+                if (column.isKey() && column.isAutoIncrement()) {
+                    return "BIGSERIAL";
+                } else {
+                    return  "BIGINT";
+                }
+            default:
+                return column.getJdbcType().getName();
+        }
+
     }
 }

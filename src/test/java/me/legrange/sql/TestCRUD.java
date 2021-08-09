@@ -59,6 +59,16 @@ public class TestCRUD extends AbstractSqlTest {
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
+    @Test
+    @Order(4)
+    public void modifyColumnTypeSmallIntBigInt() throws SqlManagerException {
+        TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT, Optional.empty(), false, false, false);
+        table.addColumn(age);
+        modeller.modifyColumn(age);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
 //    @Test
 //    @Order(4)
     public void modifyColumnType() throws SqlManagerException {
@@ -68,7 +78,6 @@ public class TestCRUD extends AbstractSqlTest {
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
-
 
     @Test
     @Order(5)
