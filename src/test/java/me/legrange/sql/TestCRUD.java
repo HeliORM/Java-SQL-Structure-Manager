@@ -69,8 +69,8 @@ public class TestCRUD extends AbstractSqlTest {
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
-//    @Test
-//    @Order(4)
+    @Test
+    @Order(4)
     public void modifyColumnType() throws SqlManagerException {
         TestColumn sex = new TestColumn(table, "sex", JDBCType.BOOLEAN, Optional.empty(), false, false, false);
         table.addColumn(sex);

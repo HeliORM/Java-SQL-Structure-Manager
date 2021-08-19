@@ -8,10 +8,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-public class SqlModeller {
+public final class SqlModeller {
 
     private final Supplier<Connection> supplier;
     private final Driver driver;
@@ -25,6 +26,13 @@ public class SqlModeller {
     SqlModeller(Supplier<Connection> supplier, Driver driver) {
         this.supplier = supplier;
         this.driver = driver;
+    }
+
+    public boolean typesAreCompatible(Column one, Column other) {
+        if (one.getJdbcType() == other.getJdbcType()) {
+            return true;
+        }
+        return driver.typesAreCompatible(one, other);
     }
 
     /**
@@ -69,7 +77,6 @@ public class SqlModeller {
                     for (int i = 1; i <= columns.getMetaData().getColumnCount(); ++i) {
                         String n = columns.getMetaData().getColumnName(i);
                         String v = columns.getString(i);
-                        System.out.printf("# %s = %s \n", n,v);
                     }
                     System.out.println();
                 }

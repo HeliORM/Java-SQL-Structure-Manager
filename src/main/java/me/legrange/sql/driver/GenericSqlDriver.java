@@ -99,4 +99,30 @@ abstract class GenericSqlDriver implements Driver {
     }
 
 
+    @Override
+    public boolean typesAreCompatible(Column one, Column other) {
+        switch (one.getJdbcType()) {
+            case BIT:
+                switch (other.getJdbcType()) {
+                    case BIT:
+                        return true;
+                    case BOOLEAN:
+                        return (!one.getLength().isPresent() || one.getLength().get() == 1);
+                    default:
+                        return false;
+                }
+            case BOOLEAN:
+                switch (other.getJdbcType()) {
+                    case BOOLEAN:
+                        return true;
+                    case BIT:
+                        return (!other.getLength().isPresent() || other.getLength().get() == 1);
+                    default:
+                        return false;
+                }
+            default:
+                return one.getJdbcType() == other.getJdbcType();
+        }
+    }
+
 }

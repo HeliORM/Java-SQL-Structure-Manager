@@ -131,7 +131,7 @@ class AbstractSqlTest {
                 && one.isKey() == other.isKey()
                 && one.getLength().equals(other.getLength())
                 && one.getName().equals(other.getName())
-                && one.getJdbcType().equals(other.getJdbcType());
+                && modeller.typesAreCompatible(one,other);
         if (!same) {
             say("one %s\n\tvs\nother %s", one, other);
 

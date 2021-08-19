@@ -61,7 +61,7 @@ public class TestColumn implements Column {
     public boolean isAutoIncrement() {
         return autoIncrement;
     }
-    
+
     @Override
     public int hashCode() {
         int result = table != null ? table.hashCode() : 0;

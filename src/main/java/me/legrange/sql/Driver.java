@@ -87,6 +87,16 @@ public interface Driver {
      */
     String makeAddIndexQuery(Index index);
 
+    /** Compare two columns to see if they have the same effective type according to
+     * a specific database implementation.
+     *
+     * @param one
+     * @param other
+     * @return
+     */
+    boolean typesAreCompatible(Column one, Column other);
+
+
 
     //// -- old
 

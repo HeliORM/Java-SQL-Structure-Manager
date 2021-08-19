@@ -5,6 +5,8 @@ import me.legrange.sql.Database;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
+import java.sql.JDBCType;
+
 import static java.lang.String.format;
 
 public class MySqlDriver extends GenericSqlDriver {
@@ -36,7 +38,7 @@ public class MySqlDriver extends GenericSqlDriver {
             type.append(" NOT NULL");
         }
         if (column.isAutoIncrement()) {
-            type.append( " AUTO_INCREMENT");
+            type.append(" AUTO_INCREMENT");
         }
         if (column.isKey()) {
             type.append(" PRIMARY KEY");
@@ -59,4 +61,6 @@ public class MySqlDriver extends GenericSqlDriver {
     public boolean supportsAlterIndex() {
         return false;
     }
+
+
 }
