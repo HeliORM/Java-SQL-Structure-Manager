@@ -11,9 +11,7 @@ import static java.lang.String.format;
 
 public class MySqlDriver extends GenericSqlDriver {
 
-
     public MySqlDriver() {
-
     }
 
     @Override
@@ -30,8 +28,27 @@ public class MySqlDriver extends GenericSqlDriver {
     public String getCreateType(Column column) {
         StringBuilder type = new StringBuilder();
         String typeName = column.getJdbcType().getName();
+        boolean useLength  = false;
+        switch (column.getJdbcType()) {
+            case LONGVARCHAR:
+            case VARCHAR:
+                if (column.getLength().isPresent()) {
+                   int  length = column.getLength().get();
+                    if (length >= 16777215) {
+                        typeName = "LONGTEXT";
+                    } else if (length > 65535) {
+                        typeName = "MEDIUMTEXT";
+                    } else if (length > 255) {
+                        typeName = "TEXT";
+                    } else {
+                        typeName = "VARCHAR";
+                        useLength = true;
+                    }
+                }
+                break;
+        }
         type.append(typeName);
-        if (column.getLength().isPresent()) {
+        if (useLength) {
             type.append(format("(%d)", column.getLength().get()));
         }
         if (!column.isNullable()) {
@@ -51,7 +68,6 @@ public class MySqlDriver extends GenericSqlDriver {
         return format("`%s`", column.getName());
     }
 
-
     @Override
     public String getIndexName(Index index) {
         return format("`%s`", index.getName());
@@ -61,6 +77,5 @@ public class MySqlDriver extends GenericSqlDriver {
     public boolean supportsAlterIndex() {
         return false;
     }
-
 
 }

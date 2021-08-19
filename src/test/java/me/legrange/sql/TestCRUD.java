@@ -40,6 +40,19 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(2)
+    public void addLongTextColumnToTable() throws SqlManagerException {
+        TestColumn notes = new TestColumn(table, "notes", JDBCType.LONGVARCHAR, Optional.of(10000), false, false, false);
+        TestColumn lnotes = new TestColumn(table, "longNotes", JDBCType.LONGVARCHAR, Optional.of(16*1024*1024), false, false, false);
+        table.addColumn(notes);
+        table.addColumn(lnotes);
+        modeller.addColumn(notes);
+        modeller.addColumn(lnotes);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
     @Order(3)
     public void deleteColumnFromTable() throws SqlManagerException {
         TestColumn email = new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false);

@@ -11,13 +11,6 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeModifyColumnQuery(Column column) {
-        /* ALTER TABLE "Person"
-  ALTER sex DROP DEFAULT
- ,ALTER sex TYPE bool USING (sex::text::bool)
- ,ALTER sex SET NOT NULL
- ,ALTER sex SET DEFAULT false;
-
-         */
         StringBuilder sql = new StringBuilder();
         sql.append(format("ALTER TABLE %s", getTableName(column.getTable())));
         sql.append(format("ALTER %s DROP DEFAULT", getColumnName(column)));
@@ -93,7 +86,8 @@ public final class PostgreSql extends GenericSqlDriver {
      */
     private String createBasicType(Column column) {
         StringBuilder type = new StringBuilder();
-        String typeName;
+        String typeName = null;
+        boolean useLength = false;
         switch (column.getJdbcType()) {
             case TINYINT:
                 if (column.isKey() && column.isAutoIncrement()) {
@@ -123,11 +117,24 @@ public final class PostgreSql extends GenericSqlDriver {
                     typeName = "BIGINT";
                 }
                 break;
+            case LONGVARCHAR:
+            case VARCHAR:
+                if (column.getLength().isPresent()) {
+                    int length = column.getLength().get();
+                    if (length > 65535) {
+                        typeName = "TEXT";
+                        useLength = false;
+                    } else {
+                        typeName = "VARCHAR";
+                        useLength = true;
+                    }
+                }
+                break;
             default:
                 typeName = column.getJdbcType().getName();
         }
         type.append(typeName);
-        if (column.getLength().isPresent()) {
+        if (useLength) {
             type.append(format("(%d)", column.getLength().get()));
         }
         return type.toString();
@@ -151,13 +158,13 @@ public final class PostgreSql extends GenericSqlDriver {
                 if (column.isKey() && column.isAutoIncrement()) {
                     return "SERIAL";
                 } else {
-                    return  "INTEGER";
+                    return "INTEGER";
                 }
             case BIGINT:
                 if (column.isKey() && column.isAutoIncrement()) {
                     return "BIGSERIAL";
                 } else {
-                    return  "BIGINT";
+                    return "BIGINT";
                 }
             default:
                 return column.getJdbcType().getName();

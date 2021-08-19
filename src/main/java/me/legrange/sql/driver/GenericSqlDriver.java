@@ -19,7 +19,7 @@ abstract class GenericSqlDriver implements Driver {
         }
         StringBuilder sql = new StringBuilder();
         sql.append(format("CREATE TABLE %s (", getTableName(table)));
-        sql.append(body.toString());
+        sql.append(body);
         sql.append(")");
         return sql.toString();
     }
@@ -98,7 +98,6 @@ abstract class GenericSqlDriver implements Driver {
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
-
     @Override
     public boolean typesAreCompatible(Column one, Column other) {
         switch (one.getJdbcType()) {
@@ -120,9 +119,33 @@ abstract class GenericSqlDriver implements Driver {
                     default:
                         return false;
                 }
+            case VARCHAR:
+            case LONGVARCHAR:
+                switch (other.getJdbcType()) {
+                    case VARCHAR:
+                    case LONGVARCHAR: {
+                        return actualTextLength(one) == actualTextLength(other);
+                    }
+                    default:
+                        return false;
+                }
             default:
                 return one.getJdbcType() == other.getJdbcType();
         }
+    }
+
+    private int actualTextLength(Column column)  {
+        if (column.getLength().isPresent()) {
+            int length = column.getLength().get();
+            if (length >= 16777215) {
+                return  2147483647;
+            } else if (length > 65535) {
+                return  16777215;
+            } else if (length > 255) {
+                return  65535;
+            }
+        }
+        return 255;
     }
 
 }

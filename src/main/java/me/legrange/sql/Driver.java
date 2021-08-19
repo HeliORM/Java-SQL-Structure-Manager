@@ -96,8 +96,6 @@ public interface Driver {
      */
     boolean typesAreCompatible(Column one, Column other);
 
-
-
     //// -- old
 
     String getDatabaseName(Database database);

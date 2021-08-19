@@ -129,7 +129,6 @@ class AbstractSqlTest {
         boolean same = one.isAutoIncrement() == other.isAutoIncrement()
                 && one.isNullable() == other.isNullable()
                 && one.isKey() == other.isKey()
-                && one.getLength().equals(other.getLength())
                 && one.getName().equals(other.getName())
                 && modeller.typesAreCompatible(one,other);
         if (!same) {

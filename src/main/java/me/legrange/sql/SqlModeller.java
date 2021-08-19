@@ -38,9 +38,6 @@ public final class SqlModeller {
      * @return True if the same
      */
     public boolean typesAreCompatible(Column one, Column other) {
-        if (one.getJdbcType() == other.getJdbcType()) {
-            return true;
-        }
         return driver.typesAreCompatible(one, other);
     }
 
@@ -332,7 +329,7 @@ public final class SqlModeller {
             }
             boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
-            return new SqlColumn(table,
+            return new  SqlColumn(table,
                     rs.getString("COLUMN_NAME"),
                     jdbcType,
                     size,
