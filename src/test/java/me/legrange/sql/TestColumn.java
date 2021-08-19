@@ -61,21 +61,7 @@ public class TestColumn implements Column {
     public boolean isAutoIncrement() {
         return autoIncrement;
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Column) {
-            Column that = (Column) obj;
-            return this.length.equals(that.getLength())
-                    && this.name.equals(that.getName())
-                    && this.getTable().getName().equals(that.getTable().getName())
-                    && this.nullable == that.isNullable()
-                    && this.key == that.isKey()
-                    && this.autoIncrement == that.isAutoIncrement();
-        }
-        return false;
-    }
-
+    
     @Override
     public int hashCode() {
         int result = table != null ? table.hashCode() : 0;
