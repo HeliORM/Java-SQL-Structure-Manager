@@ -6,9 +6,12 @@ import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -28,6 +31,12 @@ public final class SqlModeller {
         this.driver = driver;
     }
 
+    /** Compare two columns by their typing. Returns true if they are essentially the same.
+     *
+     * @param one One column
+     * @param other The other column
+     * @return True if the same
+     */
     public boolean typesAreCompatible(Column one, Column other) {
         if (one.getJdbcType() == other.getJdbcType()) {
             return true;
@@ -74,11 +83,6 @@ public final class SqlModeller {
                 while (columns.next()) {
                     SqlColumn column = getColumnFromResultSet(table, columns);
                     sqlColumns.put(column.getName(), column);
-                    for (int i = 1; i <= columns.getMetaData().getColumnCount(); ++i) {
-                        String n = columns.getMetaData().getColumnName(i);
-                        String v = columns.getString(i);
-                    }
-                    System.out.println();
                 }
             }
             Set<String> keyNames = new HashSet<>();
@@ -180,8 +184,8 @@ public final class SqlModeller {
     /**
      * Rename a column.
      *
-     * @param current
-     * @param changed
+     * @param current The current column
+     * @param changed The changed column
      * @throws SqlManagerException Thrown if there is a problem reaming the column
      */
     public void renameColumn(Column current, Column changed) throws SqlManagerException {
