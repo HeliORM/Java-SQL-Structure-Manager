@@ -56,8 +56,11 @@ public class TestCRUD extends AbstractSqlTest {
     @Order(3)
     public void deleteColumnFromTable() throws SqlManagerException {
         TestColumn email = new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false);
+        TestColumn notes = new TestColumn(table, "notes", JDBCType.LONGVARCHAR, Optional.of(10000), false, false, false);
         table.deleteColumn(email);
+        table.deleteColumn(notes);
         modeller.deleteColumn(email);
+        modeller.deleteColumn(notes);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
