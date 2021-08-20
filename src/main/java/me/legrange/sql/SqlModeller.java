@@ -31,9 +31,10 @@ public final class SqlModeller {
         this.driver = driver;
     }
 
-    /** Compare two columns by their typing. Returns true if they are essentially the same.
+    /**
+     * Compare two columns by their typing. Returns true if they are essentially the same.
      *
-     * @param one One column
+     * @param one   One column
      * @param other The other column
      * @return True if the same
      */
@@ -262,8 +263,7 @@ public final class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             if (driver.supportsAlterIndex()) {
                 stmt.executeUpdate(driver.makeModifyIndexQuery(index));
-            }
-            else {
+            } else {
                 removeIndex(index);
                 addIndex(index);
             }
@@ -319,8 +319,8 @@ public final class SqlModeller {
             JDBCType jdbcType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
             Optional<Integer> size;
             switch (jdbcType) {
-                case VARCHAR:
                 case CHAR:
+                case VARCHAR:
                 case LONGVARCHAR:
                     size = Optional.of(rs.getInt("COLUMN_SIZE"));
                     break;
@@ -329,12 +329,23 @@ public final class SqlModeller {
             }
             boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
-            return new  SqlColumn(table,
-                    rs.getString("COLUMN_NAME"),
+            String colunmName = rs.getString("COLUMN_NAME");
+            String typeName = rs.getString("TYPE_NAME");
+            Optional<Set<String>> enumValues = Optional.empty();
+            if (typeName.equals("ENUM")) {
+                try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(driver.makeReadEnumQuery(new SqlColumn(table, colunmName, jdbcType, size, nullable, autoIncrement, enumValues)))) {
+                    if (ers.next()) {
+                        enumValues = Optional.of(driver.extractEnumValues(rs.getString(1)));
+                    }
+                }
+            }
+            return new SqlColumn(table,
+                    colunmName,
                     jdbcType,
                     size,
                     nullable,
-                    autoIncrement
+                    autoIncrement,
+                    enumValues
             );
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()));

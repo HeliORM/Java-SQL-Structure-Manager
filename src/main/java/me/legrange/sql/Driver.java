@@ -3,6 +3,8 @@ package me.legrange.sql;
 import me.legrange.sql.driver.MySqlDriver;
 import me.legrange.sql.driver.PostgreSql;
 
+import java.util.Set;
+
 public interface Driver {
 
     /**
@@ -118,4 +120,7 @@ public interface Driver {
         return new PostgreSql();
     }
 
+    String makeReadEnumQuery(Column column);
+
+    Set<String> extractEnumValues(String text);
 }

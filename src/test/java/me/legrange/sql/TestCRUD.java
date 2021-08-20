@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import java.sql.JDBCType;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -48,6 +51,16 @@ public class TestCRUD extends AbstractSqlTest {
         table.addColumn(lnotes);
         modeller.addColumn(notes);
         modeller.addColumn(lnotes);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(2)
+    public void addEnumColumnToTable() throws SqlManagerException {
+        TestColumn type = new TestColumn(table, "type", JDBCType.CHAR, Optional.empty(), true, false, false, new HashSet<>(Arrays.asList("CONSPIRATOR", "COLLABORATOR")));
+        table.addColumn(type);
+        modeller.addColumn(type);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }

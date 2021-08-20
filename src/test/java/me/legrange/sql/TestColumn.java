@@ -2,6 +2,7 @@ package me.legrange.sql;
 
 import java.sql.JDBCType;
 import java.util.Optional;
+import java.util.Set;
 
 public class TestColumn implements Column {
 
@@ -12,12 +13,17 @@ public class TestColumn implements Column {
     private final boolean nullable;
     private final boolean key;
     private final boolean autoIncrement;
+    private final Set<String> enumValues;
 
     public TestColumn(Table table, String name, JDBCType jdbcType) {
         this(table, name, jdbcType, Optional.empty(), false, false, false);
     }
 
     public TestColumn(Table table, String name, JDBCType jdbcType, Optional<Integer> length, boolean nullable, boolean key, boolean autoIncrement) {
+        this(table, name, jdbcType, length, nullable, key, autoIncrement, null);
+    }
+
+    public TestColumn(Table table, String name, JDBCType jdbcType, Optional<Integer> length, boolean nullable, boolean key, boolean autoIncrement, Set<String> enumValues) {
         this.table = table;
         this.name = name;
         this.jdbcType = jdbcType;
@@ -25,6 +31,7 @@ public class TestColumn implements Column {
         this.nullable  = nullable;
         this.key = key;
         this.autoIncrement = autoIncrement;
+        this.enumValues =enumValues;
     }
 
     @Override
@@ -60,6 +67,11 @@ public class TestColumn implements Column {
     @Override
     public boolean isAutoIncrement() {
         return autoIncrement;
+    }
+
+    @Override
+    public Optional<Set<String>> getEnumValues() {
+        return Optional.ofNullable(enumValues);
     }
 
     @Override

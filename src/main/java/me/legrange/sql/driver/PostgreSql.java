@@ -5,6 +5,8 @@ import me.legrange.sql.Database;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
+import java.util.Set;
+
 import static java.lang.String.format;
 
 public final class PostgreSql extends GenericSqlDriver {
@@ -76,6 +78,16 @@ public final class PostgreSql extends GenericSqlDriver {
     @Override
     public boolean supportsAlterIndex() {
         return true;
+    }
+
+    @Override
+    public String makeReadEnumQuery(Column column) {
+        return null;
+    }
+
+    @Override
+    public Set<String> extractEnumValues(String text) {
+        return null;
     }
 
     /**
@@ -171,4 +183,5 @@ public final class PostgreSql extends GenericSqlDriver {
         }
 
     }
+
 }
