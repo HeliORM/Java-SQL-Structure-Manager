@@ -60,6 +60,8 @@ public class MySqlDriver extends GenericSqlDriver {
                         }
                     }
                     break;
+                case DECIMAL:
+                    useLength = true;
             }
         }
         type.append(typeName);
@@ -152,6 +154,8 @@ public class MySqlDriver extends GenericSqlDriver {
                         default:
                             return false;
                     }
+                case DECIMAL:
+                    return other.getJdbcType() == JDBCType.DECIMAL && one.getLength().equals( other.getLength());
                 default:
                     return one.getJdbcType() == other.getJdbcType();
             }

@@ -56,6 +56,16 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(30)
+    public void addDecimalColumnToTable() throws SqlManagerException {
+        TestColumn amount = new TestColumn(table, "amount", JDBCType.DECIMAL, Optional.of(18), false, false, false);
+        table.addColumn(amount);
+        modeller.addColumn(amount);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
     @Order(40)
     public void addEnumColumnToTable() throws SqlManagerException {
         TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "BEAST")));

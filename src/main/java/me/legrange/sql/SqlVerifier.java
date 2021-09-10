@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -59,7 +60,7 @@ public final class SqlVerifier {
                 actions.add(Action.addColumn(tableColumn));
             } else {
                 Column sqlColumn = sqlColumns.get(name);
-                if (!tableColumn.equals(sqlColumn)) {
+                if (!isSame(tableColumn,sqlColumn)) {
                     modeller.modifyColumn(tableColumn);
                     actions.add(Action.modifyColumn(tableColumn));
                 }
@@ -91,7 +92,7 @@ public final class SqlVerifier {
                 actions.add(Action.addIndex(tableIndex));
             } else {
                 Index sqlIndex = sqlIndexes.get(name);
-                if (!tableIndex.equals(sqlIndex)) {
+                if (!isSame(tableIndex, sqlIndex)) {
                     modeller.modifyIndex(tableIndex);
                     actions.add(Action.modifyIndex(tableIndex));
                 }
@@ -107,6 +108,40 @@ public final class SqlVerifier {
             }
         }
         return actions;
+    }
+
+    private boolean isSame(Column one, Column other) {
+        return one.isAutoIncrement() == other.isAutoIncrement()
+                && one.isNullable() == other.isNullable()
+                && one.isKey() == other.isKey()
+                && one.getName().equals(other.getName())
+                && modeller.typesAreCompatible(one,other);
+    }
+
+    private boolean isSame(Index one, Index other) {
+        boolean same = one.getName().equals(other.getName())
+                && (one.isUnique() == other.isUnique());
+        if (same) {
+            return isSame(one.getColumns(), other.getColumns());
+        }
+        return false;
+    }
+
+    private boolean isSame(Set<Column> one, Set<Column> other) {
+        if (one.size() != other.size()) {
+            return false;
+        }
+        Map<String, Column> oneMap = one.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        Map<String, Column> otherMap = other.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        for (String name : oneMap.keySet()) {
+            if (!otherMap.containsKey(name)) {
+                return false;
+            }
+            if (!isSame(oneMap.get(name), otherMap.get(name))) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

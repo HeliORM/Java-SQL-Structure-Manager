@@ -125,18 +125,6 @@ class AbstractSqlTest {
         return true;
     }
 
-    protected boolean isSameColumn(Column one, Column other) {
-        boolean same = one.isAutoIncrement() == other.isAutoIncrement()
-                && one.isNullable() == other.isNullable()
-                && one.isKey() == other.isKey()
-                && one.getName().equals(other.getName())
-                && modeller.typesAreCompatible(one,other);
-        if (!same) {
-            say("one %s\n\tvs\nother %s", one, other);
-
-        }
-        return same;
-    }
 
     protected boolean isSameIndexes(Set<Index> one, Set<Index>other) {
         if (one.size() != other.size()) {
@@ -163,6 +151,19 @@ class AbstractSqlTest {
             return isSameColumns(one.getColumns(), other.getColumns());
         }
         return false;
+    }
+
+    protected boolean isSameColumn(Column one, Column other) {
+        boolean same = one.isAutoIncrement() == other.isAutoIncrement()
+                && one.isNullable() == other.isNullable()
+                && one.isKey() == other.isKey()
+                && one.getName().equals(other.getName())
+                && modeller.typesAreCompatible(one,other);
+        if (!same) {
+            say("one %s\n\tvs\nother %s", one, other);
+
+        }
+        return same;
     }
 
 }

@@ -323,6 +323,7 @@ public final class SqlModeller {
                 case CHAR:
                 case VARCHAR:
                 case LONGVARCHAR:
+                case DECIMAL:
                     size = Optional.of(rs.getInt("COLUMN_SIZE"));
                     break;
                 default:
