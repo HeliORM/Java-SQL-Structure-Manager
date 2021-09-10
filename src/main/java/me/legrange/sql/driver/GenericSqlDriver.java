@@ -98,43 +98,7 @@ abstract class GenericSqlDriver implements Driver {
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
-    @Override
-    public boolean typesAreCompatible(Column one, Column other) {
-        switch (one.getJdbcType()) {
-            case BIT:
-                switch (other.getJdbcType()) {
-                    case BIT:
-                        return true;
-                    case BOOLEAN:
-                        return (!one.getLength().isPresent() || one.getLength().get() == 1);
-                    default:
-                        return false;
-                }
-            case BOOLEAN:
-                switch (other.getJdbcType()) {
-                    case BOOLEAN:
-                        return true;
-                    case BIT:
-                        return (!other.getLength().isPresent() || other.getLength().get() == 1);
-                    default:
-                        return false;
-                }
-            case VARCHAR:
-            case LONGVARCHAR:
-                switch (other.getJdbcType()) {
-                    case VARCHAR:
-                    case LONGVARCHAR: {
-                        return actualTextLength(one) == actualTextLength(other);
-                    }
-                    default:
-                        return false;
-                }
-            default:
-                return one.getJdbcType() == other.getJdbcType();
-        }
-    }
-
-    private int actualTextLength(Column column)  {
+    protected final int actualTextLength(Column column)  {
         if (column.getLength().isPresent()) {
             int length = column.getLength().get();
             if (length >= 16777215) {

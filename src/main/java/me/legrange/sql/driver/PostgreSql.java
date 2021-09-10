@@ -6,6 +6,7 @@ import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
 import java.util.Set;
+import java.util.StringJoiner;
 
 import static java.lang.String.format;
 
@@ -90,6 +91,36 @@ public final class PostgreSql extends GenericSqlDriver {
         return null;
     }
 
+    @Override
+    public String makeAddColumnQuery(Column column) {
+        StringBuilder buf = new StringBuilder();
+        if (column.getEnumValues().isPresent()) {
+            buf.append(makeAddEnumTypeQuery(column));
+        }
+        buf.append(format("ALTER TABLE %s ADD COLUMN %s %s",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getCreateType(column)));
+        return buf.toString();
+    }
+
+
+    private String makeAddEnumTypeQuery(Column column) {
+        String typeName = typeName(column);
+        StringJoiner buf = new StringJoiner("\n");
+        buf.add("DO $$");
+        buf.add("BEGIN");
+        buf.add(format("    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '%s') THEN", typeName));
+        buf.add(format("        CREATE TYPE \"%s\" AS ENUM(", typeName));
+        buf.add(column.getEnumValues().get().stream()
+                        .map(v -> "'" + v + "'")
+                .reduce((a,b) -> a + "," + b).get());
+        buf.add(");");
+        buf.add("    END IF;");
+        buf.add("END$$;");
+        return buf.toString();
+    }
+
     /**
      * Create the basic type declaration for a coloumn excluding annotations like keys and nullability
      *
@@ -143,7 +174,12 @@ public final class PostgreSql extends GenericSqlDriver {
                 }
                 break;
             default:
-                typeName = column.getJdbcType().getName();
+                if (column.getEnumValues().isPresent()) {
+                    typeName = typeName(column);
+                }
+                else {
+                    typeName = column.getJdbcType().getName();
+                }
         }
         type.append(typeName);
         if (useLength) {
@@ -179,9 +215,49 @@ public final class PostgreSql extends GenericSqlDriver {
                     return "BIGINT";
                 }
             default:
+                if (column.getEnumValues().isPresent()) {
+                    return format("%s_%s", column.getTable().getName(), column.getName());
+                }
                 return column.getJdbcType().getName();
         }
 
     }
+
+    @Override
+    public boolean typesAreCompatible(Column one, Column other) {
+        switch (one.getJdbcType()) {
+            case BIT:
+                switch (other.getJdbcType()) {
+                    case BIT:
+                        return true;
+                    case BOOLEAN:
+                        return (!one.getLength().isPresent() || one.getLength().get() == 1);
+                    default:
+                        return false;
+                }
+            case BOOLEAN:
+                switch (other.getJdbcType()) {
+                    case BOOLEAN:
+                        return true;
+                    case BIT:
+                        return (!other.getLength().isPresent() || other.getLength().get() == 1);
+                    default:
+                        return false;
+                }
+            case VARCHAR:
+            case LONGVARCHAR:
+                switch (other.getJdbcType()) {
+                    case VARCHAR:
+                    case LONGVARCHAR: {
+                        return actualTextLength(one) == actualTextLength(other);
+                    }
+                    default:
+                        return false;
+                }
+            default:
+                return one.getJdbcType() == other.getJdbcType();
+        }
+    }
+
 
 }

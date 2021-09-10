@@ -333,9 +333,10 @@ public final class SqlModeller {
             String typeName = rs.getString("TYPE_NAME");
             Optional<Set<String>> enumValues = Optional.empty();
             if (typeName.equals("ENUM")) {
-                try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(driver.makeReadEnumQuery(new SqlColumn(table, colunmName, jdbcType, size, nullable, autoIncrement, enumValues)))) {
+                String query = driver.makeReadEnumQuery(new SqlColumn(table, colunmName, jdbcType, size, nullable, autoIncrement, enumValues));
+                try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
                     if (ers.next()) {
-                        enumValues = Optional.of(driver.extractEnumValues(rs.getString(1)));
+                        enumValues = Optional.of(driver.extractEnumValues(ers.getString(1)));
                     }
                 }
             }

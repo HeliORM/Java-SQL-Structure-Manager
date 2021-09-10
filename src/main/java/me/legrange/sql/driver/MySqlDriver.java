@@ -95,7 +95,8 @@ public class MySqlDriver extends GenericSqlDriver {
 
     @Override
     public String makeReadEnumQuery(Column column) {
-        return format("SHOW COLUMNS FROM %s LIKE '%s'", getTableName(column.getTable()), column.getName());
+        return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
+                "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'", column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName());
     }
 
     @Override
@@ -105,4 +106,55 @@ public class MySqlDriver extends GenericSqlDriver {
                 .map(val -> val.substring(1, val.length() - 1))
                 .collect(Collectors.toSet());
     }
+
+    @Override
+    public boolean typesAreCompatible(Column one, Column other) {
+        switch (one.getJdbcType()) {
+            case BIT:
+                switch (other.getJdbcType()) {
+                    case BIT:
+                        return true;
+                    case BOOLEAN:
+                        return (!one.getLength().isPresent() || one.getLength().get() == 1);
+                    default:
+                        return false;
+                }
+            case BOOLEAN:
+                switch (other.getJdbcType()) {
+                    case BOOLEAN:
+                        return true;
+                    case BIT:
+                        return (!other.getLength().isPresent() || other.getLength().get() == 1);
+                    default:
+                        return false;
+                }
+            case VARCHAR:
+            case LONGVARCHAR:
+                switch (other.getJdbcType()) {
+                    case VARCHAR:
+                    case LONGVARCHAR: {
+                        return actualTextLength(one) == actualTextLength(other);
+                    }
+                    default:
+                        return false;
+                }
+            case CHAR:
+                if (one.getEnumValues().isPresent()) {
+                    if (other.getEnumValues().isPresent()) {
+                        Set<String> ones = one.getEnumValues().get();
+                        Set<String> others = other.getEnumValues().get();
+                        return  ones.stream().allMatch(v -> others.contains(v))
+                                && (others.stream().allMatch(v -> ones.contains(v)));
+
+                    }
+                    return false;
+                }
+                else {
+                    return !other.getEnumValues().isPresent();
+                }
+            default:
+                return one.getJdbcType() == other.getJdbcType();
+        }
+    }
+
 }
