@@ -6,6 +6,7 @@ import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -331,23 +332,22 @@ public final class SqlModeller {
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String colunmName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
-            Optional<Set<String>> enumValues = Optional.empty();
+            Set<String> enumValues = Collections.emptySet();
             if (typeName.equals("ENUM")) {
-                String query = driver.makeReadEnumQuery(new SqlColumn(table, colunmName, jdbcType, size, nullable, autoIncrement, enumValues));
+                String query = driver.makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, enumValues));
                 try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
                     if (ers.next()) {
-                        enumValues = Optional.of(driver.extractEnumValues(ers.getString(1)));
+                        enumValues = driver.extractEnumValues(ers.getString(1));
                     }
                 }
+                return new SqlEnumColumn(table, colunmName, nullable, enumValues);
             }
             return new SqlColumn(table,
                     colunmName,
                     jdbcType,
                     size,
                     nullable,
-                    autoIncrement,
-                    enumValues
-            );
+                    autoIncrement);
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()));
         }

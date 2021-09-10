@@ -58,7 +58,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(40)
     public void addEnumColumnToTable() throws SqlManagerException {
-        TestColumn type = new TestColumn(table, "type", JDBCType.CHAR, Optional.empty(), true, false, false, new HashSet<>(Arrays.asList("APE", "BEAST")));
+        TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "BEAST")));
         table.addColumn(type);
         modeller.addColumn(type);
         Table loaded = modeller.readTable(db, "Person");
@@ -68,7 +68,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(50)
     public void addEnumValue() throws SqlManagerException {
-        TestColumn type = new TestColumn(table, "type", JDBCType.CHAR, Optional.empty(), true, false, false, new HashSet<>(Arrays.asList("APE", "BEAST", "COW")));
+        TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "BEAST", "COW")));
         table.addColumn(type);
         modeller.modifyColumn(type);
         Table loaded = modeller.readTable(db, "Person");
@@ -78,7 +78,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(60)
     public void removeEnumValue() throws SqlManagerException {
-        TestColumn type = new TestColumn(table, "type", JDBCType.CHAR, Optional.empty(), true, false, false, new HashSet<>(Arrays.asList("APE", "COW")));
+        TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "COW")));
         table.addColumn(type);
         modeller.modifyColumn(type);
         Table loaded = modeller.readTable(db, "Person");

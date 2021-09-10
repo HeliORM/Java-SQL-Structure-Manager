@@ -120,7 +120,7 @@ public interface Driver {
         return new PostgreSql();
     }
 
-    String makeReadEnumQuery(Column column);
+    String makeReadEnumQuery(EnumColumn column);
 
     Set<String> extractEnumValues(String text);
 }

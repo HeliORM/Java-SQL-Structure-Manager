@@ -70,11 +70,6 @@ public class TestColumn implements Column {
     }
 
     @Override
-    public Optional<Set<String>> getEnumValues() {
-        return Optional.ofNullable(enumValues);
-    }
-
-    @Override
     public int hashCode() {
         int result = table != null ? table.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);

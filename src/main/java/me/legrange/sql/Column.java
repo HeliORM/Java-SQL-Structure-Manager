@@ -20,6 +20,4 @@ public interface Column {
 
     boolean isAutoIncrement();
 
-    Optional<Set<String>> getEnumValues();
-
 }

@@ -2,6 +2,7 @@ package me.legrange.sql.driver;
 
 import me.legrange.sql.Column;
 import me.legrange.sql.Database;
+import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
@@ -82,7 +83,7 @@ public final class PostgreSql extends GenericSqlDriver {
     }
 
     @Override
-    public String makeReadEnumQuery(Column column) {
+    public String makeReadEnumQuery(EnumColumn column) {
         return null;
     }
 
@@ -94,8 +95,8 @@ public final class PostgreSql extends GenericSqlDriver {
     @Override
     public String makeAddColumnQuery(Column column) {
         StringBuilder buf = new StringBuilder();
-        if (column.getEnumValues().isPresent()) {
-            buf.append(makeAddEnumTypeQuery(column));
+        if (column instanceof EnumColumn) {
+            buf.append(makeAddEnumTypeQuery((EnumColumn) column));
         }
         buf.append(format("ALTER TABLE %s ADD COLUMN %s %s",
                 getTableName(column.getTable()),
@@ -105,16 +106,16 @@ public final class PostgreSql extends GenericSqlDriver {
     }
 
 
-    private String makeAddEnumTypeQuery(Column column) {
+    private String makeAddEnumTypeQuery(EnumColumn column) {
         String typeName = typeName(column);
         StringJoiner buf = new StringJoiner("\n");
         buf.add("DO $$");
         buf.add("BEGIN");
         buf.add(format("    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '%s') THEN", typeName));
         buf.add(format("        CREATE TYPE \"%s\" AS ENUM(", typeName));
-        buf.add(column.getEnumValues().get().stream()
-                        .map(v -> "'" + v + "'")
-                .reduce((a,b) -> a + "," + b).get());
+        buf.add(column.getEnumValues().stream()
+                .map(v -> "'" + v + "'")
+                .reduce((a, b) -> a + "," + b).get());
         buf.add(");");
         buf.add("    END IF;");
         buf.add("END$$;");
@@ -131,55 +132,54 @@ public final class PostgreSql extends GenericSqlDriver {
         StringBuilder type = new StringBuilder();
         String typeName = null;
         boolean useLength = false;
-        switch (column.getJdbcType()) {
-            case TINYINT:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName = "SERIAL";
-                } else {
-                    typeName = "TINYINT";
-                }
-                break;
-            case SMALLINT:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName = "SERIAL";
-                } else {
-                    typeName = "SMALLINT";
-                }
-                break;
-            case INTEGER:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName = "SERIAL";
-                } else {
-                    typeName = "INTEGER";
-                }
-                break;
-            case BIGINT:
-                if (column.isKey() && column.isAutoIncrement()) {
-                    typeName = "BIGSERIAL";
-                } else {
-                    typeName = "BIGINT";
-                }
-                break;
-            case LONGVARCHAR:
-            case VARCHAR:
-                if (column.getLength().isPresent()) {
-                    int length = column.getLength().get();
-                    if (length > 65535) {
-                        typeName = "TEXT";
-                        useLength = false;
+        if (column instanceof EnumColumn) {
+            typeName = typeName(column);
+        } else {
+            switch (column.getJdbcType()) {
+                case TINYINT:
+                    if (column.isKey() && column.isAutoIncrement()) {
+                        typeName = "SERIAL";
                     } else {
-                        typeName = "VARCHAR";
-                        useLength = true;
+                        typeName = "TINYINT";
                     }
-                }
-                break;
-            default:
-                if (column.getEnumValues().isPresent()) {
-                    typeName = typeName(column);
-                }
-                else {
+                    break;
+                case SMALLINT:
+                    if (column.isKey() && column.isAutoIncrement()) {
+                        typeName = "SERIAL";
+                    } else {
+                        typeName = "SMALLINT";
+                    }
+                    break;
+                case INTEGER:
+                    if (column.isKey() && column.isAutoIncrement()) {
+                        typeName = "SERIAL";
+                    } else {
+                        typeName = "INTEGER";
+                    }
+                    break;
+                case BIGINT:
+                    if (column.isKey() && column.isAutoIncrement()) {
+                        typeName = "BIGSERIAL";
+                    } else {
+                        typeName = "BIGINT";
+                    }
+                    break;
+                case LONGVARCHAR:
+                case VARCHAR:
+                    if (column.getLength().isPresent()) {
+                        int length = column.getLength().get();
+                        if (length > 65535) {
+                            typeName = "TEXT";
+                            useLength = false;
+                        } else {
+                            typeName = "VARCHAR";
+                            useLength = true;
+                        }
+                    }
+                    break;
+                default:
                     typeName = column.getJdbcType().getName();
-                }
+            }
         }
         type.append(typeName);
         if (useLength) {
@@ -189,6 +189,9 @@ public final class PostgreSql extends GenericSqlDriver {
     }
 
     private String typeName(Column column) {
+        if (column instanceof EnumColumn) {
+            return format("%s_%s", column.getTable().getName(), column.getName());
+        }
         switch (column.getJdbcType()) {
             case TINYINT:
                 if (column.isKey() && column.isAutoIncrement()) {
@@ -215,9 +218,6 @@ public final class PostgreSql extends GenericSqlDriver {
                     return "BIGINT";
                 }
             default:
-                if (column.getEnumValues().isPresent()) {
-                    return format("%s_%s", column.getTable().getName(), column.getName());
-                }
                 return column.getJdbcType().getName();
         }
 
