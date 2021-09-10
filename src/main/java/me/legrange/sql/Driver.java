@@ -3,6 +3,7 @@ package me.legrange.sql;
 import me.legrange.sql.driver.MySqlDriver;
 import me.legrange.sql.driver.PostgreSql;
 
+import java.sql.JDBCType;
 import java.util.Set;
 
 public interface Driver {
@@ -119,6 +120,8 @@ public interface Driver {
     static Driver posgresql() {
         return new PostgreSql();
     }
+
+    boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName);
 
     String makeReadEnumQuery(EnumColumn column);
 

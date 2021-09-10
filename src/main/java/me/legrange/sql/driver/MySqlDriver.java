@@ -94,6 +94,11 @@ public class MySqlDriver extends GenericSqlDriver {
     }
 
     @Override
+    public boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
+        return typeName.equals("ENUM");
+    }
+
+    @Override
     public String makeReadEnumQuery(EnumColumn column) {
         return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
                 "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'", column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName());

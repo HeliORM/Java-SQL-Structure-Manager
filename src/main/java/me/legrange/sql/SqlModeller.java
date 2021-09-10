@@ -333,7 +333,7 @@ public final class SqlModeller {
             String colunmName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
             Set<String> enumValues = Collections.emptySet();
-            if (typeName.equals("ENUM")) {
+            if (driver.isEnumColumn(colunmName, jdbcType, typeName)) {
                 String query = driver.makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, enumValues));
                 try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
                     if (ers.next()) {
@@ -349,7 +349,7 @@ public final class SqlModeller {
                     nullable,
                     autoIncrement);
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()));
+            throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()),ex);
         }
     }
 

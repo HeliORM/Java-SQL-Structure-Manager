@@ -6,8 +6,11 @@ import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.Table;
 
+import java.sql.JDBCType;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -84,14 +87,21 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeReadEnumQuery(EnumColumn column) {
-        return null;
+        return format("SELECT ENUM_RANGE(NULL::%s)", typeName(column));
+    }
+
+    @Override
+    public boolean isEnumColumn(String columName, JDBCType jdbcType, String typeName) {
+        return jdbcType == JDBCType.VARCHAR && typeName.endsWith("_" + columName);
     }
 
     @Override
     public Set<String> extractEnumValues(String text) {
-        return null;
+        return Arrays.stream(text.replace("{", "").replace("}", "")
+                        .split(","))
+                .map(val -> val.substring(1, val.length() - 1))
+                .collect(Collectors.toSet());
     }
-
     @Override
     public String makeAddColumnQuery(Column column) {
         StringBuilder buf = new StringBuilder();
@@ -104,7 +114,6 @@ public final class PostgreSql extends GenericSqlDriver {
                 getCreateType(column)));
         return buf.toString();
     }
-
 
     private String makeAddEnumTypeQuery(EnumColumn column) {
         String typeName = typeName(column);
