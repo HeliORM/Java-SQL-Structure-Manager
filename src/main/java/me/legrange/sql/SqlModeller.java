@@ -99,8 +99,8 @@ public final class SqlModeller {
             for (Column column : sqlColumns.values()) {
                 table.addColumn(column);
             }
-            try (ResultSet indexes = dbm.getIndexInfo(database.getName(), null, table.getName(), true, false)) {
-                Map<String, SqlIndex> idxMap = new HashMap<>();
+            Map<String, SqlIndex> idxMap = new HashMap<>();
+            try (ResultSet indexes = dbm.getIndexInfo(database.getName(), null, table.getName(), false, false)) {
                 while (indexes.next()) {
                     String index_name = indexes.getString("INDEX_NAME");
                     String column_name = indexes.getString("COLUMN_NAME");
@@ -114,10 +114,10 @@ public final class SqlModeller {
                     }
                     sqlIndex.addColunm(table.getColumn(column_name));
                 }
-                for (Index index : idxMap.values()) {
-                    if (!keyNames.contains(index.getName())) {
-                        table.addIndex(index);
-                    }
+            }
+            for (Index index : idxMap.values()) {
+                if (!keyNames.contains(index.getName())) {
+                    table.addIndex(index);
                 }
             }
             return table;
@@ -333,16 +333,26 @@ public final class SqlModeller {
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String colunmName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
-            Set<String> enumValues = Collections.emptySet();
             if (driver.isEnumColumn(colunmName, jdbcType, typeName)) {
-                String query = driver.makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, enumValues));
+                Set<String> values = Collections.emptySet();
+                String query = driver.makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, values));
                 try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
                     if (ers.next()) {
-                        enumValues = driver.extractEnumValues(ers.getString(1));
+                        values = driver.extractEnumValues(ers.getString(1));
                     }
                 }
-                return new SqlEnumColumn(table, colunmName, nullable, enumValues);
+                return new SqlEnumColumn(table, colunmName, nullable, values);
+            } else if (driver.isSetColumn(colunmName, jdbcType, typeName)) {
+                Set<String> values = Collections.emptySet();
+                String query = driver.makeReadSetQuery(new SqlSetColumn(table, colunmName, nullable, values));
+                try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
+                    if (ers.next()) {
+                        values = driver.extractSetValues(ers.getString(1));
+                    }
+                }
+                return new SqlSetColumn(table, colunmName, nullable, values);
             }
+
             return new SqlColumn(table,
                     colunmName,
                     jdbcType,
@@ -350,7 +360,7 @@ public final class SqlModeller {
                     nullable,
                     autoIncrement);
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()),ex);
+            throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()), ex);
         }
     }
 

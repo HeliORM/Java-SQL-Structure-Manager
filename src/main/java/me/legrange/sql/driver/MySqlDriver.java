@@ -4,6 +4,7 @@ import me.legrange.sql.Column;
 import me.legrange.sql.Database;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
+import me.legrange.sql.SetColumn;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
@@ -39,6 +40,15 @@ public class MySqlDriver extends GenericSqlDriver {
             useLength = false;
             typeName = "ENUM("
                     + enumValues.stream()
+                    .map(val -> "'" + val + "'")
+                    .reduce((v1, v2) -> v1 + "," + v2).get()
+                    + ")";
+        } else if (column instanceof SetColumn) {
+            SetColumn ec = (SetColumn) column;
+            Set<String> values = ec.getSetValues();
+            useLength = false;
+            typeName = "SET("
+                    + values.stream()
                     .map(val -> "'" + val + "'")
                     .reduce((v1, v2) -> v1 + "," + v2).get()
                     + ")";
@@ -115,11 +125,39 @@ public class MySqlDriver extends GenericSqlDriver {
     }
 
     @Override
+    public boolean isSetColumn(String columnName, JDBCType jdbcType, String typeName) {
+        return typeName.equals("SET");
+    }
+
+
+    @Override
+    public String makeReadSetQuery(SetColumn column) {
+        return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
+                "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'", column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName());
+    }
+
+    @Override
+    public Set<String> extractSetValues(String text) {
+        return Arrays.stream(text.replace("enum", "").replace("(", "").replace(")", "")
+                        .split(","))
+                .map(val -> val.substring(1, val.length() - 1))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
     public boolean typesAreCompatible(Column one, Column other) {
         if (one instanceof EnumColumn) {
             if (other instanceof EnumColumn) {
                 Set<String> ones = ((EnumColumn) one).getEnumValues();
                 Set<String> others = ((EnumColumn) other).getEnumValues();
+                return ones.stream().allMatch(v -> others.contains(v))
+                        && (others.stream().allMatch(v -> ones.contains(v)));
+            }
+            return false;
+        } else if (one instanceof SetColumn) {
+            if (other instanceof SetColumn) {
+                Set<String> ones = ((SetColumn) one).getSetValues();
+                Set<String> others = ((SetColumn) other).getSetValues();
                 return ones.stream().allMatch(v -> others.contains(v))
                         && (others.stream().allMatch(v -> ones.contains(v)));
             }
@@ -155,7 +193,7 @@ public class MySqlDriver extends GenericSqlDriver {
                             return false;
                     }
                 case DECIMAL:
-                    return other.getJdbcType() == JDBCType.DECIMAL && one.getLength().equals( other.getLength());
+                    return other.getJdbcType() == JDBCType.DECIMAL && one.getLength().equals(other.getLength());
                 default:
                     return one.getJdbcType() == other.getJdbcType();
             }

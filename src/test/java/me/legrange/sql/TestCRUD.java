@@ -95,6 +95,37 @@ public class TestCRUD extends AbstractSqlTest {
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
+
+    @Test
+    @Order(61)
+    public void addSetColumnToTable() throws SqlManagerException {
+        TestColumn col = new TestSetColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
+        table.addColumn(col);
+        modeller.addColumn(col);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(62)
+    public void addSetValue() throws SqlManagerException {
+        TestColumn col = new TestSetColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST", "2ND BREAKFAST","LUNCH", "DINNER")));
+        table.addColumn(col);
+        modeller.modifyColumn(col);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(63)
+    public void removeSetValue() throws SqlManagerException {
+        TestColumn col = new TestEnumColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST","LUNCH", "DINNER")));
+        table.addColumn(col);
+        modeller.modifyColumn(col);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
     @Test
     @Order(70)
     public void deleteColumnFromTable() throws SqlManagerException {

@@ -126,4 +126,10 @@ public interface Driver {
     String makeReadEnumQuery(EnumColumn column);
 
     Set<String> extractEnumValues(String text);
+
+    boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName);
+
+    String makeReadSetQuery(SetColumn sqlSetColumn);
+
+    Set<String> extractSetValues(String string);
 }

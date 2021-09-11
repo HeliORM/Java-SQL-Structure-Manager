@@ -4,6 +4,7 @@ import me.legrange.sql.Column;
 import me.legrange.sql.Database;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
+import me.legrange.sql.SetColumn;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
@@ -268,5 +269,18 @@ public final class PostgreSql extends GenericSqlDriver {
         }
     }
 
+    @Override
+    public boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName) {
+        return false;
+    }
 
+    @Override
+    public String makeReadSetQuery(SetColumn sqlSetColumn) {
+        return null;
+    }
+
+    @Override
+    public Set<String> extractSetValues(String string) {
+        return null;
+    }
 }
