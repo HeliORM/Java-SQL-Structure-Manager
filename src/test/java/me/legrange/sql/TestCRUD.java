@@ -140,7 +140,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(110)
-    public void addIndexToTable() throws SqlManagerException {
+    public void addIndexSingleColumnTable() throws SqlManagerException {
         TestIndex index = new TestIndex(table, "index0", true);
         index.addColumn(table.getColumn("name"));
         table.addIndex(index);
@@ -148,6 +148,20 @@ public class TestCRUD extends AbstractSqlTest {
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
+
+
+    @Test
+    @Order(111)
+    public void addMultiColumnIndexToTable() throws SqlManagerException {
+        TestIndex index = new TestIndex(table, "index1", true);
+        index.addColumn(table.getColumn("name"));
+        index.addColumn(table.getColumn("age"));
+        table.addIndex(index);
+        modeller.addIndex(index);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
 
     @Test
     @Order(120)
