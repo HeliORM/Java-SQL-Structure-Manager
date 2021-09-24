@@ -19,6 +19,9 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeModifyColumnQuery(Column column) {
+        if (column instanceof EnumColumn) {
+
+        }
         StringBuilder sql = new StringBuilder();
         sql.append(format("ALTER TABLE %s", getTableName(column.getTable())));
         sql.append(format("ALTER %s DROP DEFAULT", getColumnName(column)));
@@ -88,7 +91,7 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeReadEnumQuery(EnumColumn column) {
-        return format("SELECT ENUM_RANGE(NULL::%s)", typeName(column));
+        return format("SELECT ENUM_RANGE(NULL::\"%s\")", typeName(column));
     }
 
     @Override
@@ -103,6 +106,7 @@ public final class PostgreSql extends GenericSqlDriver {
                 .map(val -> val.substring(1, val.length() - 1))
                 .collect(Collectors.toSet());
     }
+
     @Override
     public String makeAddColumnQuery(Column column) {
         StringBuilder buf = new StringBuilder();
@@ -143,7 +147,7 @@ public final class PostgreSql extends GenericSqlDriver {
         String typeName = null;
         boolean useLength = false;
         if (column instanceof EnumColumn) {
-            typeName = typeName(column);
+            typeName = "\"" + typeName(column) + "\"";
         } else {
             switch (column.getJdbcType()) {
                 case TINYINT:

@@ -43,6 +43,17 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(21)
+    public void renameColumnInTable() throws SqlManagerException {
+        Column fullName = new TestColumn(table, "fullName", JDBCType.VARCHAR, Optional.of(42), false, false, false);
+        modeller.renameColumn(table.getColumn("name"), fullName);
+        table.deleteColumn(table.getColumn("name"));
+        table.addColumn(fullName);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
     @Order(30)
     public void addLongTextColumnToTable() throws SqlManagerException {
         TestColumn notes = new TestColumn(table, "notes", JDBCType.LONGVARCHAR, Optional.of(10000), false, false, false);
@@ -142,7 +153,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(80)
     public void modifyColumnLength() throws SqlManagerException {
-        TestColumn name = new TestColumn(table, "name", JDBCType.VARCHAR, Optional.of(64), true, false, false);
+        TestColumn name = new TestColumn(table, "fullName", JDBCType.VARCHAR, Optional.of(64), true, false, false);
         table.addColumn(name);
         modeller.modifyColumn(name);
         Table loaded = modeller.readTable(db, "Person");
@@ -173,7 +184,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Order(110)
     public void addIndexSingleColumnTable() throws SqlManagerException {
         TestIndex index = new TestIndex(table, "index0", true);
-        index.addColumn(table.getColumn("name"));
+        index.addColumn(table.getColumn("fullName"));
         table.addIndex(index);
         modeller.addIndex(index);
         Table loaded = modeller.readTable(db, "Person");
@@ -185,7 +196,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Order(111)
     public void addMultiColumnIndexToTable() throws SqlManagerException {
         TestIndex index = new TestIndex(table, "index1", true);
-        index.addColumn(table.getColumn("name"));
+        index.addColumn(table.getColumn("fullName"));
         index.addColumn(table.getColumn("age"));
         table.addIndex(index);
         modeller.addIndex(index);
