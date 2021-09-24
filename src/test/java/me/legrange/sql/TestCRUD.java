@@ -22,7 +22,6 @@ public class TestCRUD extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER,  Optional.empty(), false, true, true));
         table.addColumn(new TestColumn(table, "name", JDBCType.VARCHAR, Optional.of(42), false, false, false));
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
-        table.addColumn(new TestColumn(table, "sex", JDBCType.BIT, Optional.empty(), false, false, false));
         if (modeller.tableExists(table)) {
             say("Removing table %s", table.getName());
             modeller.deleteTable(table);
@@ -34,7 +33,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(20)
-    public void addColumnToTable() throws SqlManagerException {
+    public void addStringColumnToTable() throws SqlManagerException {
         TestColumn email = new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false);
         table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false));
         modeller.addColumn(email);
@@ -44,6 +43,16 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(21)
+    public void addBooleanColumnToTable() throws SqlManagerException {
+        TestColumn sex = new TestColumn(table, "sex", JDBCType.BOOLEAN, Optional.empty(), false, false, false);
+        table.addColumn(sex);
+        modeller.addColumn(sex);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(22)
     public void renameColumnInTable() throws SqlManagerException {
         Column fullName = new TestColumn(table, "fullName", JDBCType.VARCHAR, Optional.of(42), false, false, false);
         modeller.renameColumn(table.getColumn("name"), fullName);
@@ -230,8 +239,6 @@ public class TestCRUD extends AbstractSqlTest {
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
-
-
 
     @Test
     @Order(130)
