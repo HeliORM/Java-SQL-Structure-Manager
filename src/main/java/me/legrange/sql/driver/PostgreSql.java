@@ -19,9 +19,6 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeModifyColumnQuery(Column column) {
-        if (column instanceof EnumColumn) {
-
-        }
         StringBuilder sql = new StringBuilder();
         sql.append(format("ALTER TABLE %s", getTableName(column.getTable())));
         sql.append(format("ALTER %s DROP DEFAULT", getColumnName(column)));

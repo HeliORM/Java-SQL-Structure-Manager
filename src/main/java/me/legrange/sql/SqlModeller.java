@@ -287,7 +287,6 @@ public final class SqlModeller {
         }
     }
 
-
     /**
      * Deterime if a table exists in a database in SQL
      *

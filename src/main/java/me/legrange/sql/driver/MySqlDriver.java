@@ -117,6 +117,11 @@ public class MySqlDriver extends GenericSqlDriver {
     }
 
     @Override
+    public String makeRenameIndexQuery(Index current, Index changed) {
+        return format("ALTER TABLE %s RENAME INDEX %s TO %s", getTableName(current.getTable()), getIndexName(current), getIndexName(changed));
+    }
+
+    @Override
     public Set<String> extractEnumValues(String text) {
         return Arrays.stream(text.replace("enum", "").replace("(", "").replace(")", "")
                         .split(","))
@@ -143,6 +148,7 @@ public class MySqlDriver extends GenericSqlDriver {
                 .map(val -> val.substring(1, val.length() - 1))
                 .collect(Collectors.toSet());
     }
+
 
     @Override
     public boolean typesAreCompatible(Column one, Column other) {

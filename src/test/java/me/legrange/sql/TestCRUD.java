@@ -216,11 +216,27 @@ public class TestCRUD extends AbstractSqlTest {
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
+    @Test
+    @Order(121)
+    public void renameIndexOnTable() throws SqlManagerException {
+        TestIndex index = (TestIndex) table.getIndex("index0");
+        TestIndex index1 = new TestIndex(table, "index7", index.isUnique());
+        for (Column column : index.getColumns()) {
+            index1.addColumn(column);
+        }
+        modeller.renameIndex(index, index1);
+        table.removeIndex(index);
+        table.addIndex(index1);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+
 
     @Test
     @Order(130)
     public void removeIndexFromTable() throws SqlManagerException {
-        Index index =table.getIndex("index0");
+        Index index =table.getIndex("index1");
         table.removeIndex(index);
         modeller.removeIndex(index);
         Table loaded = modeller.readTable(db, "Person");
