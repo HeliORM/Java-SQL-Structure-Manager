@@ -264,6 +264,19 @@ public final class PostgreSql extends GenericSqlDriver {
                     default:
                         return false;
                 }
+            case NUMERIC:
+                switch (other.getJdbcType()) {
+                    case NUMERIC:
+                    case DECIMAL:
+                        return true;
+                }
+            case DECIMAL:
+                switch (other.getJdbcType()) {
+                    case NUMERIC:
+                        return true;
+                    case DECIMAL:
+                        return one.getLength().isPresent() && other.getLength().isPresent() && one.getLength() == other.getLength();
+                }
             default:
                 return one.getJdbcType() == other.getJdbcType();
         }
