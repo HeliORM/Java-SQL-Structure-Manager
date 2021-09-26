@@ -26,10 +26,6 @@ class SqlColumn implements Column {
         this.key = key;
     }
 
-    void setAutoIncrement(boolean autoIncrement) {
-        this.autoIncrement = autoIncrement;
-    }
-
     @Override
     public Table getTable() {
         return table;

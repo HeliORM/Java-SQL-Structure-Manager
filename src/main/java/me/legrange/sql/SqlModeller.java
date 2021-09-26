@@ -356,9 +356,9 @@ public final class SqlModeller {
             }
             switch (jdbcType) {
                 case BIT:
-                    return new SqlBitColumn(table, colunmName, jdbcType, nullable, autoIncrement, size.get());
+                    return new SqlBitColumn(table, colunmName, nullable, size.get());
                 case BOOLEAN:
-                    return new SqlBooleanColumn(table, colunmName, jdbcType, nullable, autoIncrement);
+                    return new SqlBooleanColumn(table, colunmName, nullable);
             }
             return new SqlColumn(table,
                     colunmName,
