@@ -2,9 +2,10 @@ package me.legrange.sql;
 
 import static java.lang.String.format;
 
+/** An action taken by the verifier to bring a database into sync with what is expected by the database model.
+ *
+ */
 public final class Action {
-
-
 
     public enum Type {
         CREATE_TABLE,
