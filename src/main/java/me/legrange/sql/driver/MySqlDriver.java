@@ -1,10 +1,14 @@
 package me.legrange.sql.driver;
 
+import me.legrange.sql.BitColumn;
+import me.legrange.sql.BooleanColumn;
 import me.legrange.sql.Column;
 import me.legrange.sql.Database;
+import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
+import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
@@ -32,12 +36,10 @@ public class MySqlDriver extends GenericSqlDriver {
     @Override
     public String getCreateType(Column column) {
         String typeName = column.getJdbcType().getName();
-        boolean useLength = false;
         StringBuilder type = new StringBuilder();
         if (column instanceof EnumColumn) {
             EnumColumn ec = (EnumColumn) column;
             Set<String> enumValues = ec.getEnumValues();
-            useLength = false;
             typeName = "ENUM("
                     + enumValues.stream()
                     .map(val -> "'" + val + "'")
@@ -46,38 +48,26 @@ public class MySqlDriver extends GenericSqlDriver {
         } else if (column instanceof SetColumn) {
             SetColumn ec = (SetColumn) column;
             Set<String> values = ec.getSetValues();
-            useLength = false;
             typeName = "SET("
                     + values.stream()
                     .map(val -> "'" + val + "'")
                     .reduce((v1, v2) -> v1 + "," + v2).get()
                     + ")";
-        } else {
-            switch (column.getJdbcType()) {
-                case LONGVARCHAR:
-                case VARCHAR:
-                    if (column.getLength().isPresent()) {
-                        int length = column.getLength().get();
-                        if (length >= 16777215) {
-                            typeName = "LONGTEXT";
-                        } else if (length > 65535) {
-                            typeName = "MEDIUMTEXT";
-                        } else if (length > 255) {
-                            typeName = "TEXT";
-                        } else {
-                            typeName = "VARCHAR";
-                            useLength = true;
-                        }
-                    }
-                    break;
-                case DECIMAL:
-                    useLength = true;
+        } else if (column instanceof StringColumn)  {
+            int length = ((StringColumn) column).getLength();
+            if (length >= 16777215) {
+                typeName = "LONGTEXT";
+            } else if (length > 65535) {
+                typeName = "MEDIUMTEXT";
+            } else if (length > 255) {
+                typeName = "TEXT";
+            } else {
+                typeName = format("VARCHAR(%d)", length);
             }
+        } else if (column instanceof DecimalColumn) {
+            typeName = format("DECIMAL(%d,%d)",((DecimalColumn) column).getPrecision(), ((DecimalColumn) column).getScale());
         }
         type.append(typeName);
-        if (useLength) {
-            type.append(format("(%d)", column.getLength().get()));
-        }
         if (!column.isNullable()) {
             type.append(" NOT NULL");
         }
@@ -168,42 +158,33 @@ public class MySqlDriver extends GenericSqlDriver {
                         && (others.stream().allMatch(v -> ones.contains(v)));
             }
             return false;
-        } else {
-            switch (one.getJdbcType()) {
-                case BIT:
-                    switch (other.getJdbcType()) {
-                        case BIT:
-                            return true;
-                        case BOOLEAN:
-                            return (!one.getLength().isPresent() || one.getLength().get() == 1);
-                        default:
-                            return false;
-                    }
-                case BOOLEAN:
-                    switch (other.getJdbcType()) {
-                        case BOOLEAN:
-                            return true;
-                        case BIT:
-                            return (!other.getLength().isPresent() || other.getLength().get() == 1);
-                        default:
-                            return false;
-                    }
-                case VARCHAR:
-                case LONGVARCHAR:
-                    switch (other.getJdbcType()) {
-                        case VARCHAR:
-                        case LONGVARCHAR: {
-                            return actualTextLength(one) == actualTextLength(other);
-                        }
-                        default:
-                            return false;
-                    }
-                case DECIMAL:
-                    return other.getJdbcType() == JDBCType.DECIMAL && one.getLength().equals(other.getLength());
-                default:
-                    return one.getJdbcType() == other.getJdbcType();
+        } else if (one instanceof BitColumn) {
+            if (other instanceof BitColumn) {
+                return ((BitColumn) one).getBits() == ((BitColumn) other).getBits();
+            }
+            if (other instanceof BooleanColumn) {
+                return ((BitColumn) one).getBits() == 1;
             }
         }
+        else if (one instanceof BooleanColumn) {
+            if (other instanceof BooleanColumn) {
+                return true;
+            }
+            else if (other instanceof BitColumn) {
+                return ((BitColumn) other).getBits() == 1;
+            }
+        } else if (one instanceof StringColumn) {
+            if (other instanceof StringColumn) {
+                return actualTextLength((StringColumn) one) == actualTextLength((StringColumn) other);
+            }
+        }
+        else if (one instanceof DecimalColumn) {
+            if (other instanceof DecimalColumn) {
+                return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
+                        && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
+            }
+        }
+        return one.getJdbcType() == other.getJdbcType();
     }
 
 }

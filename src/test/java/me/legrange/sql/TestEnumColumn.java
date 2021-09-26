@@ -9,7 +9,7 @@ public class TestEnumColumn extends TestColumn implements EnumColumn {
     private final Set<String> enumValues;
 
     public TestEnumColumn(Table table, String name, boolean nullable, Set<String> enumValues) {
-        super(table, name, JDBCType.OTHER, Optional.empty(), nullable, false, false);
+        super(table, name, JDBCType.OTHER, nullable, false, false);
         this.enumValues = enumValues;
     }
 

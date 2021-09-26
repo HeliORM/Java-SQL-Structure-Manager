@@ -322,7 +322,7 @@ public final class SqlModeller {
                 case CHAR:
                 case VARCHAR:
                 case LONGVARCHAR:
-                case DECIMAL:
+                case BIT:
                     size = Optional.of(rs.getInt("COLUMN_SIZE"));
                     break;
                 default:
@@ -332,6 +332,7 @@ public final class SqlModeller {
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String colunmName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
+
             if (driver.isEnumColumn(colunmName, jdbcType, typeName)) {
                 Set<String> values = Collections.emptySet();
                 String query = driver.makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, values));
@@ -350,12 +351,18 @@ public final class SqlModeller {
                     }
                 }
                 return new SqlSetColumn(table, colunmName, nullable, values);
+            } else if (driver.isStringColumn(colunmName, jdbcType, typeName)) {
+                return new SqlStringColumn(table, colunmName, jdbcType, nullable, size.get());
             }
-
+            switch (jdbcType) {
+                case BIT:
+                    return new SqlBitColumn(table, colunmName, jdbcType, nullable, autoIncrement, size.get());
+                case BOOLEAN:
+                    return new SqlBooleanColumn(table, colunmName, jdbcType, nullable, autoIncrement);
+            }
             return new SqlColumn(table,
                     colunmName,
                     jdbcType,
-                    size,
                     nullable,
                     autoIncrement);
         } catch (SQLException ex) {

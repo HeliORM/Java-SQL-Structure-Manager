@@ -27,8 +27,6 @@ public interface Column {
      */
     Table getTable();
 
-    Optional<Integer> getLength();
-
     /** Return if the column can be null.
      *
      * @return True if it can be null

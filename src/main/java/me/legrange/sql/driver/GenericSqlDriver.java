@@ -3,8 +3,10 @@ package me.legrange.sql.driver;
 import me.legrange.sql.Column;
 import me.legrange.sql.Driver;
 import me.legrange.sql.Index;
+import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
+import java.sql.JDBCType;
 import java.util.StringJoiner;
 
 import static java.lang.String.format;
@@ -98,16 +100,25 @@ abstract class GenericSqlDriver implements Driver {
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
-    protected final int actualTextLength(Column column)  {
-        if (column.getLength().isPresent()) {
-            int length = column.getLength().get();
-            if (length >= 16777215) {
-                return  2147483647;
-            } else if (length > 65535) {
-                return  16777215;
-            } else if (length > 255) {
-                return  65535;
-            }
+    @Override
+    public boolean isStringColumn(String colunmName, JDBCType jdbcType, String typeName) {
+        switch (jdbcType) {
+            case CHAR:
+            case VARCHAR:
+            case LONGVARCHAR:
+                return true;
+        }
+        return false;
+    }
+
+    protected final int actualTextLength(StringColumn column) {
+        int length = column.getLength();
+        if (length >= 16777215) {
+            return 2147483647;
+        } else if (length > 65535) {
+            return 16777215;
+        } else if (length > 255) {
+            return 65535;
         }
         return 255;
     }

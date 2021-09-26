@@ -9,16 +9,14 @@ class SqlColumn implements Column {
     private final Table table;
     private final String name;
     private final JDBCType jdbcType;
-    private final Optional<Integer> length;
     private final boolean nullable;
     private boolean key;
     private boolean autoIncrement;
 
-    SqlColumn(Table table, String name, JDBCType jdbcType, Optional<Integer> length, boolean nullable, boolean autoIncrement) {
+    SqlColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean autoIncrement) {
         this.table = table;
         this.name = name;
         this.jdbcType = jdbcType;
-        this.length = length;
         this.nullable = nullable;
         this.key = false;
         this.autoIncrement = autoIncrement;
@@ -48,11 +46,6 @@ class SqlColumn implements Column {
     }
 
     @Override
-    public Optional<Integer> getLength() {
-        return length;
-    }
-
-    @Override
     public boolean isNullable() {
         return nullable;
     }
@@ -73,7 +66,6 @@ class SqlColumn implements Column {
                 "table=" + table +
                 ", name='" + name + '\'' +
                 ", jdbcType=" + jdbcType +
-                ", length=" + length +
                 ", nullable=" + nullable +
                 ", key=" + key +
                 ", autoIncrement=" + autoIncrement +

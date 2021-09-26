@@ -9,25 +9,23 @@ public class TestColumn implements Column {
     private final Table table;
     private final String name;
     private final JDBCType jdbcType;
-    private final Optional<Integer> length;
     private final boolean nullable;
     private final boolean key;
     private final boolean autoIncrement;
     private final Set<String> enumValues;
 
     public TestColumn(Table table, String name, JDBCType jdbcType) {
-        this(table, name, jdbcType, Optional.empty(), false, false, false);
+        this(table, name, jdbcType, false, false, false);
     }
 
-    public TestColumn(Table table, String name, JDBCType jdbcType, Optional<Integer> length, boolean nullable, boolean key, boolean autoIncrement) {
-        this(table, name, jdbcType, length, nullable, key, autoIncrement, null);
+    public TestColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean key, boolean autoIncrement) {
+        this(table, name, jdbcType, nullable, key, autoIncrement, null);
     }
 
-    public TestColumn(Table table, String name, JDBCType jdbcType, Optional<Integer> length, boolean nullable, boolean key, boolean autoIncrement, Set<String> enumValues) {
+    public TestColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean key, boolean autoIncrement, Set<String> enumValues) {
         this.table = table;
         this.name = name;
         this.jdbcType = jdbcType;
-        this.length = length;
         this.nullable  = nullable;
         this.key = key;
         this.autoIncrement = autoIncrement;
@@ -50,11 +48,6 @@ public class TestColumn implements Column {
     }
 
     @Override
-    public Optional<Integer> getLength() {
-        return length;
-    }
-
-    @Override
     public boolean isNullable() {
         return nullable;
     }
@@ -74,7 +67,6 @@ public class TestColumn implements Column {
         int result = table != null ? table.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (jdbcType != null ? jdbcType.hashCode() : 0);
-        result = 31 * result + (length != null ? length.hashCode() : 0);
         return result;
     }
 
@@ -84,7 +76,6 @@ public class TestColumn implements Column {
                 "table=" + table +
                 ", name='" + name + '\'' +
                 ", jdbcType=" + jdbcType +
-                ", length=" + length +
                 ", nullable=" + nullable +
                 ", key=" + key +
                 ", autoIncrement=" + autoIncrement +

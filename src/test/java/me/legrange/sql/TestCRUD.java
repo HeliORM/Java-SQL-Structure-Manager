@@ -19,8 +19,8 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(10)
     public void createTable() throws SqlManagerException {
-        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER,  Optional.empty(), false, true, true));
-        table.addColumn(new TestColumn(table, "name", JDBCType.VARCHAR, Optional.of(42), false, false, false));
+        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER,  false, true, true));
+        table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR,  42));
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
         if (modeller.tableExists(table)) {
             say("Removing table %s", table.getName());
@@ -34,8 +34,8 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(20)
     public void addStringColumnToTable() throws SqlManagerException {
-        TestColumn email = new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false);
-        table.addColumn(new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false));
+        TestColumn email = new TestStringColumn(table, "email", JDBCType.VARCHAR, 128);
+        table.addColumn(new TestStringColumn(table, "email", JDBCType.VARCHAR,  128));
         modeller.addColumn(email);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
@@ -44,7 +44,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(21)
     public void addBooleanColumnToTable() throws SqlManagerException {
-        TestColumn sex = new TestColumn(table, "sex", JDBCType.BOOLEAN, Optional.empty(), false, false, false);
+        TestColumn sex = new TestBooleanColumn(table, "sex");
         table.addColumn(sex);
         modeller.addColumn(sex);
         Table loaded = modeller.readTable(db, "Person");
@@ -54,7 +54,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(22)
     public void renameColumnInTable() throws SqlManagerException {
-        Column fullName = new TestColumn(table, "fullName", JDBCType.VARCHAR, Optional.of(42), false, false, false);
+        Column fullName = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, 42);
         modeller.renameColumn(table.getColumn("name"), fullName);
         table.deleteColumn(table.getColumn("name"));
         table.addColumn(fullName);
@@ -65,8 +65,8 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(30)
     public void addLongTextColumnToTable() throws SqlManagerException {
-        TestColumn notes = new TestColumn(table, "notes", JDBCType.LONGVARCHAR, Optional.of(10000), false, false, false);
-        TestColumn lnotes = new TestColumn(table, "longNotes", JDBCType.LONGVARCHAR, Optional.of(16*1024*1024), false, false, false);
+        TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR, 10000);
+        TestColumn lnotes = new TestStringColumn(table, "longNotes", JDBCType.LONGVARCHAR,16*1024*1024);
         table.addColumn(notes);
         table.addColumn(lnotes);
         modeller.addColumn(notes);
@@ -78,7 +78,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(30)
     public void addDecimalColumnToTable() throws SqlManagerException {
-        TestColumn amount = new TestColumn(table, "amount", JDBCType.DECIMAL, Optional.of(18), false, false, false);
+        TestColumn amount = new TestDecimalColumn(table, "amount", 18,2);
         table.addColumn(amount);
         modeller.addColumn(amount);
         Table loaded = modeller.readTable(db, "Person");
@@ -149,8 +149,8 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(70)
     public void deleteColumnFromTable() throws SqlManagerException {
-        TestColumn email = new TestColumn(table, "email", JDBCType.VARCHAR,  Optional.of(128), false, false, false);
-        TestColumn notes = new TestColumn(table, "notes", JDBCType.LONGVARCHAR, Optional.of(10000), false, false, false);
+        TestColumn email = new TestStringColumn(table, "email", JDBCType.VARCHAR, 128);
+        TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR,1000);
         table.deleteColumn(email);
         table.deleteColumn(notes);
         modeller.deleteColumn(email);
@@ -162,7 +162,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(80)
     public void modifyColumnLength() throws SqlManagerException {
-        TestColumn name = new TestColumn(table, "fullName", JDBCType.VARCHAR, Optional.of(64), true, false, false);
+        TestColumn name = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, true, false, 64);
         table.addColumn(name);
         modeller.modifyColumn(name);
         Table loaded = modeller.readTable(db, "Person");
@@ -172,7 +172,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(90)
     public void modifyColumnTypeSmallIntBigInt() throws SqlManagerException {
-        TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT, Optional.empty(), false, false, false);
+        TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT,false, false, false);
         table.addColumn(age);
         modeller.modifyColumn(age);
         Table loaded = modeller.readTable(db, "Person");
@@ -182,7 +182,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(100)
     public void modifyColumnType() throws SqlManagerException {
-        TestColumn sex = new TestColumn(table, "sex", JDBCType.BOOLEAN, Optional.empty(), false, false, false);
+        TestColumn sex = new TestBooleanColumn(table, "sex");
         table.addColumn(sex);
         modeller.modifyColumn(sex);
         Table loaded = modeller.readTable(db, "Person");

@@ -1,10 +1,14 @@
 package me.legrange.sql.driver;
 
+import me.legrange.sql.BitColumn;
+import me.legrange.sql.BooleanColumn;
 import me.legrange.sql.Column;
 import me.legrange.sql.Database;
+import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
+import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
 import java.sql.JDBCType;
@@ -142,9 +146,15 @@ public final class PostgreSql extends GenericSqlDriver {
     private String createBasicType(Column column) {
         StringBuilder type = new StringBuilder();
         String typeName = null;
-        boolean useLength = false;
         if (column instanceof EnumColumn) {
             typeName = "\"" + typeName(column) + "\"";
+        } else if (column instanceof StringColumn) {
+            int length = ((StringColumn) column).getLength();
+            if (length > 65535) {
+                typeName = "TEXT";
+            } else {
+                typeName = format("VARCHAR(%d)", length);
+            }
         } else {
             switch (column.getJdbcType()) {
                 case TINYINT:
@@ -175,27 +185,11 @@ public final class PostgreSql extends GenericSqlDriver {
                         typeName = "BIGINT";
                     }
                     break;
-                case LONGVARCHAR:
-                case VARCHAR:
-                    if (column.getLength().isPresent()) {
-                        int length = column.getLength().get();
-                        if (length > 65535) {
-                            typeName = "TEXT";
-                            useLength = false;
-                        } else {
-                            typeName = "VARCHAR";
-                            useLength = true;
-                        }
-                    }
-                    break;
                 default:
                     typeName = column.getJdbcType().getName();
             }
         }
         type.append(typeName);
-        if (useLength) {
-            type.append(format("(%d)", column.getLength().get()));
-        }
         return type.toString();
     }
 
@@ -236,47 +230,37 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public boolean typesAreCompatible(Column one, Column other) {
+        if (one instanceof BooleanColumn) {
+            if (other instanceof BitColumn) {
+                return ((BitColumn) other).getBits() == 1;
+            }
+            return other instanceof BooleanColumn;
+        }
+        if (one instanceof BitColumn) {
+            if (other instanceof BitColumn) {
+                return ((BitColumn) one).getBits() == ((BitColumn) other).getBits();
+            }
+            return other instanceof BooleanColumn && ((BitColumn) one).getBits() == 1;
+        }
+        if (one instanceof StringColumn) {
+            if (other instanceof StringColumn) {
+                return actualTextLength((StringColumn) one) == actualTextLength((StringColumn) other);
+            }
+            return false;
+        }
+        if (one instanceof DecimalColumn) {
+            if (other instanceof DecimalColumn) {
+                return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
+                        && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
+            }
+            return other.getJdbcType() == JDBCType.NUMERIC;
+        }
         switch (one.getJdbcType()) {
-            case BIT:
-                switch (other.getJdbcType()) {
-                    case BIT:
-                        return true;
-                    case BOOLEAN:
-                        return (!one.getLength().isPresent() || one.getLength().get() == 1);
-                    default:
-                        return false;
-                }
-            case BOOLEAN:
-                switch (other.getJdbcType()) {
-                    case BOOLEAN:
-                        return true;
-                    case BIT:
-                        return (!other.getLength().isPresent() || other.getLength().get() == 1);
-                    default:
-                        return false;
-                }
-            case VARCHAR:
-            case LONGVARCHAR:
-                switch (other.getJdbcType()) {
-                    case VARCHAR:
-                    case LONGVARCHAR: {
-                        return actualTextLength(one) == actualTextLength(other);
-                    }
-                    default:
-                        return false;
-                }
             case NUMERIC:
                 switch (other.getJdbcType()) {
                     case NUMERIC:
                     case DECIMAL:
                         return true;
-                }
-            case DECIMAL:
-                switch (other.getJdbcType()) {
-                    case NUMERIC:
-                        return true;
-                    case DECIMAL:
-                        return one.getLength().isPresent() && other.getLength().isPresent() && one.getLength() == other.getLength();
                 }
             default:
                 return one.getJdbcType() == other.getJdbcType();

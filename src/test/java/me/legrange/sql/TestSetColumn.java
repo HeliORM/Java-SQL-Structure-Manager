@@ -9,7 +9,7 @@ public class TestSetColumn extends TestColumn implements SetColumn {
     private final Set<String> setValues;
 
     public TestSetColumn(Table table, String name, boolean nullable, Set<String> setValues) {
-        super(table, name, JDBCType.OTHER, Optional.empty(), nullable, false, false);
+        super(table, name, JDBCType.OTHER, nullable, false, false);
         this.setValues = setValues;
     }
 

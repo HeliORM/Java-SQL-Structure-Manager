@@ -9,7 +9,7 @@ public class SqlEnumColumn extends SqlColumn implements EnumColumn{
     private final Set<String> enumValues;
 
     SqlEnumColumn(Table table, String name, boolean nullable, Set<String> enumValues) {
-        super(table, name, JDBCType.OTHER, Optional.empty(), nullable, false);
+        super(table, name, JDBCType.OTHER,  nullable, false);
         this.enumValues = enumValues;
     }
 
