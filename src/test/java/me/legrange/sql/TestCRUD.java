@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
@@ -33,7 +34,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(20)
-    public void addStringColumnToTable() throws SqlManagerException {
+    public void addStringColumn() throws SqlManagerException {
         TestColumn email = new TestStringColumn(table, "email", JDBCType.VARCHAR, 128);
         table.addColumn(new TestStringColumn(table, "email", JDBCType.VARCHAR,  128));
         modeller.addColumn(email);
@@ -43,7 +44,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(21)
-    public void addBooleanColumnToTable() throws SqlManagerException {
+    public void addBooleanColumn() throws SqlManagerException {
         TestColumn sex = new TestBooleanColumn(table, "sex");
         table.addColumn(sex);
         modeller.addColumn(sex);
@@ -53,7 +54,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(22)
-    public void renameColumnInTable() throws SqlManagerException {
+    public void renameColumn() throws SqlManagerException {
         Column fullName = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, 42);
         modeller.renameColumn(table.getColumn("name"), fullName);
         table.deleteColumn(table.getColumn("name"));
@@ -64,7 +65,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(30)
-    public void addLongTextColumnToTable() throws SqlManagerException {
+    public void addLongTextColumn() throws SqlManagerException {
         TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR, 10000);
         TestColumn lnotes = new TestStringColumn(table, "longNotes", JDBCType.LONGVARCHAR,16*1024*1024);
         table.addColumn(notes);
@@ -77,7 +78,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(30)
-    public void addDecimalColumnToTable() throws SqlManagerException {
+    public void addDecimalColumn() throws SqlManagerException {
         TestColumn amount = new TestDecimalColumn(table, "amount", 18,2);
         table.addColumn(amount);
         modeller.addColumn(amount);
@@ -87,7 +88,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(40)
-    public void addEnumColumnToTable() throws SqlManagerException {
+    public void addEnumColumn() throws SqlManagerException {
         TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "BEAST")));
         table.addColumn(type);
         modeller.addColumn(type);
@@ -118,7 +119,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(61)
-    public void addSetColumnToTable() throws SqlManagerException {
+    public void addSetColumn() throws SqlManagerException {
         TestColumn col = new TestSetColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
         table.addColumn(col);
         modeller.addColumn(col);
@@ -148,7 +149,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(70)
-    public void deleteColumnFromTable() throws SqlManagerException {
+    public void deleteColumn() throws SqlManagerException {
         TestColumn email = new TestStringColumn(table, "email", JDBCType.VARCHAR, 128);
         TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR,1000);
         table.deleteColumn(email);
@@ -174,8 +175,10 @@ public class TestCRUD extends AbstractSqlTest {
     public void modifyColumnTypeSmallIntBigInt() throws SqlManagerException {
         TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT,false, false, false);
         table.addColumn(age);
-        modeller.modifyColumn(age);
         Table loaded = modeller.readTable(db, "Person");
+        assertFalse(isSameTable(loaded, table), "Table we modified must not be the same as the one loaded");
+        modeller.modifyColumn(age);
+        loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
@@ -191,7 +194,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(110)
-    public void addIndexSingleColumnTable() throws SqlManagerException {
+    public void addSingleColumnIndex() throws SqlManagerException {
         TestIndex index = new TestIndex(table, "index0", true);
         index.addColumn(table.getColumn("fullName"));
         table.addIndex(index);
@@ -203,7 +206,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(111)
-    public void addMultiColumnIndexToTable() throws SqlManagerException {
+    public void addMultiColumnIndex() throws SqlManagerException {
         TestIndex index = new TestIndex(table, "index1", true);
         index.addColumn(table.getColumn("fullName"));
         index.addColumn(table.getColumn("age"));
@@ -213,10 +216,23 @@ public class TestCRUD extends AbstractSqlTest {
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
+    @Test
+    @Order(112)
+    public void changeIndexUninqueness() throws SqlManagerException {
+        TestIndex index = new TestIndex(table, "index1", false);
+        index.addColumn(table.getColumn("fullName"));
+        index.addColumn(table.getColumn("age"));
+        table.addIndex(index);
+        modeller.modifyIndex(index);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+
 
     @Test
     @Order(120)
-    public void modifyIndexOnTable() throws SqlManagerException {
+    public void addColumnToIndex() throws SqlManagerException {
         TestIndex index = (TestIndex) table.getIndex("index0");
         index.addColumn(table.getColumn("age"));
         table.addIndex(index);
@@ -227,7 +243,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(121)
-    public void renameIndexOnTable() throws SqlManagerException {
+    public void renameIndex() throws SqlManagerException {
         TestIndex index = (TestIndex) table.getIndex("index0");
         TestIndex index1 = new TestIndex(table, "index7", index.isUnique());
         for (Column column : index.getColumns()) {
@@ -242,7 +258,7 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(130)
-    public void removeIndexFromTable() throws SqlManagerException {
+    public void removeIndex() throws SqlManagerException {
         Index index =table.getIndex("index1");
         table.removeIndex(index);
         modeller.removeIndex(index);
