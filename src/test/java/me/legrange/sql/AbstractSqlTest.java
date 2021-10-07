@@ -3,16 +3,18 @@ package me.legrange.sql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import me.legrange.sql.driver.MySqlDriver;
-import me.legrange.sql.driver.PostgreSql;
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
 
 class AbstractSqlTest {
 
@@ -22,24 +24,35 @@ class AbstractSqlTest {
     protected static TestDatabase db = new TestDatabase("neutral");
     protected static TestTable table = new TestTable(db, "Person");
 
+    @Container
+    public static GenericContainer mariadb = new GenericContainer(DockerImageName.parse("mariadb"))
+            .withExposedPorts(3306)
+            .withEnv("MYSQL_DATABASE","neutral")
+            .withEnv("MYSQL_ROOT_PASSWORD","dev");
+
+    @Container
+    public static GenericContainer postgres = new GenericContainer(DockerImageName.parse("postgres"))
+            .withExposedPorts(5432)
+            .withEnv("POSTGRES_DB","neutral")
+            .withEnv("POSTGRES_PASSWORD","dev");
+
+
     @BeforeAll
     public static void setup() throws Exception {
         String dbType = System.getenv("TEST_DB");
         dbType = (dbType == null) ? "" : dbType;
         Driver driver = null;
         switch (dbType) {
-            case "mysql":
-                jdbcDataSource = setupMysqlDataSource();
-                driver = Driver.mysql();
-                break;
             case "postgresql":
                 jdbcDataSource = setupPostgreSqlDatasource();
                 driver = Driver.posgresql();
                 break;
-            case "h2":
+            case "mysql":
             default:
-                driver = Driver.posgresql();
-                jdbcDataSource = setupH2DataSource();
+                jdbcDataSource = setupMysqlDataSource();
+                driver = Driver.mysql();
+                break;
+
         }
         say("Using %s data source", dbType);
          manager = SqlVerifier.forPool(() -> {
@@ -64,26 +77,10 @@ class AbstractSqlTest {
         System.out.println();
     }
 
-    private static DataSource setupH2DataSource() {
-//        JdbcDataSource jdbcDataSource = new JdbcDataSource();
-//        jdbcDataSource.setUser("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-////        jdbcDataSource.setUrl("jdbc:h2:~/neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;DATABASE_TO_UPPER=false;WRITE_DELAY=0");
-//        return jdbcDataSource;
-
-        HikariConfig conf = new HikariConfig();
-//        conf.setJdbcUrl(" jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;"+
-//                "INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=MYSQL;"+
-//                "DATABASE_TO_UPPER=false;WRITE_DELAY=0;CASE_INSENSITIVE_IDENTIFIERS=TRUE");
-        conf.setJdbcUrl("jdbc:h2:~/neutral;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS neutral;MODE=POSTGRESQL;DATABASE_TO_UPPER=false;WRITE_DELAY=0");
-//        conf.setUsername("root");
-//        conf.setPassword("dev");
-        HikariDataSource ds = new HikariDataSource(conf);
-        return ds;
-    }
-
     private static DataSource setupMysqlDataSource() throws SQLException {
+        mariadb.start();
         HikariConfig conf = new HikariConfig();
-        conf.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/neutral");
+        conf.setJdbcUrl(format("jdbc:mysql://%s:%d/neutral", mariadb.getHost(), mariadb.getFirstMappedPort()));
         conf.setUsername("root");
         conf.setPassword("dev");
         HikariDataSource ds = new HikariDataSource(conf);
@@ -92,8 +89,9 @@ class AbstractSqlTest {
 
 
     private static DataSource setupPostgreSqlDatasource() throws SQLException {
+        postgres.start();
         HikariConfig conf = new HikariConfig();
-        conf.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/neutral");
+        conf.setJdbcUrl(format("jdbc:postgresql://%s:%d/neutral", postgres.getHost(), postgres.getFirstMappedPort()));
         conf.setUsername("postgres");
         conf.setPassword("dev");
         HikariDataSource ds = new HikariDataSource(conf);
