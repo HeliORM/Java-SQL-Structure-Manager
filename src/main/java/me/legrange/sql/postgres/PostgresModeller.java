@@ -1,4 +1,4 @@
-package me.legrange.sql.driver;
+package me.legrange.sql.postgres;
 
 import me.legrange.sql.BitColumn;
 import me.legrange.sql.BooleanColumn;
@@ -8,18 +8,87 @@ import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
+import me.legrange.sql.SqlModeller;
 import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
+import java.sql.Connection;
 import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-public final class PostgreSql extends GenericSqlDriver {
+public final class PostgresModeller extends SqlModeller {
+    /**
+     * Create a new modeller with the given connection supplier and driver.
+     *
+     * @param supplier The connection supplier
+     */
+    public PostgresModeller(Supplier<Connection> supplier) {
+        super(supplier);
+    }
+
+    @Override
+    protected boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
+        return jdbcType == JDBCType.VARCHAR && typeName.endsWith("_" + columnName);
+    }
+
+    @Override
+    protected boolean typesAreCompatible(Column one, Column other) {
+        if (one instanceof BooleanColumn) {
+            if (other instanceof BitColumn) {
+                return ((BitColumn) other).getBits() == 1;
+            }
+            return other instanceof BooleanColumn;
+        }
+        if (one instanceof BitColumn) {
+            if (other instanceof BitColumn) {
+                return ((BitColumn) one).getBits() == ((BitColumn) other).getBits();
+            }
+            return other instanceof BooleanColumn && ((BitColumn) one).getBits() == 1;
+        }
+        if (one instanceof StringColumn) {
+            if (other instanceof StringColumn) {
+                return actualTextLength((StringColumn) one) == actualTextLength((StringColumn) other);
+            }
+            return false;
+        }
+        if (one instanceof DecimalColumn) {
+            if (other instanceof DecimalColumn) {
+                return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
+                        && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
+            }
+            return other.getJdbcType() == JDBCType.NUMERIC;
+        }
+        if (one.getJdbcType() == JDBCType.NUMERIC) {
+            switch (other.getJdbcType()) {
+                case NUMERIC:
+                case DECIMAL:
+                    return true;
+            }
+        }
+        return one.getJdbcType() == other.getJdbcType();
+    }
+
+    @Override
+    protected boolean isSetColumn(String columnName, JDBCType jdbcType, String typeName) {
+        return false;
+    }
+
+    @Override
+    protected String makeReadSetQuery(SetColumn sqlSetColumn) {
+        return null;
+    }
+
+    @Override
+    protected Set<String> extractSetValues(String string) {
+        return null;
+    }
+
 
     @Override
     public String makeModifyColumnQuery(Column column) {
@@ -68,11 +137,7 @@ public final class PostgreSql extends GenericSqlDriver {
 
     @Override
     public String makeModifyIndexQuery(Index index) {
-        StringBuilder sql = new StringBuilder();
-        sql.append(makeRemoveIndexQuery(index));
-        sql.append(";");
-        sql.append(makeAddIndexQuery(index));
-        return sql.toString();
+       return  makeRemoveIndexQuery(index) + ";" + makeAddIndexQuery(index);
     }
 
     @Override
@@ -93,11 +158,6 @@ public final class PostgreSql extends GenericSqlDriver {
     @Override
     public String makeReadEnumQuery(EnumColumn column) {
         return format("SELECT ENUM_RANGE(NULL::\"%s\")", typeName(column));
-    }
-
-    @Override
-    public boolean isEnumColumn(String columName, JDBCType jdbcType, String typeName) {
-        return jdbcType == JDBCType.VARCHAR && typeName.endsWith("_" + columName);
     }
 
     @Override
@@ -138,14 +198,14 @@ public final class PostgreSql extends GenericSqlDriver {
     }
 
     /**
-     * Create the basic type declaration for a coloumn excluding annotations like keys and nullability
+     * Create the basic type declaration for a column excluding annotations like keys and nullability
      *
      * @param column The column
      * @return The type declaration
      */
     private String createBasicType(Column column) {
         StringBuilder type = new StringBuilder();
-        String typeName = null;
+        String typeName;
         if (column instanceof EnumColumn) {
             typeName = "\"" + typeName(column) + "\"";
         } else if (column instanceof StringColumn) {
@@ -228,57 +288,4 @@ public final class PostgreSql extends GenericSqlDriver {
 
     }
 
-    @Override
-    public boolean typesAreCompatible(Column one, Column other) {
-        if (one instanceof BooleanColumn) {
-            if (other instanceof BitColumn) {
-                return ((BitColumn) other).getBits() == 1;
-            }
-            return other instanceof BooleanColumn;
-        }
-        if (one instanceof BitColumn) {
-            if (other instanceof BitColumn) {
-                return ((BitColumn) one).getBits() == ((BitColumn) other).getBits();
-            }
-            return other instanceof BooleanColumn && ((BitColumn) one).getBits() == 1;
-        }
-        if (one instanceof StringColumn) {
-            if (other instanceof StringColumn) {
-                return actualTextLength((StringColumn) one) == actualTextLength((StringColumn) other);
-            }
-            return false;
-        }
-        if (one instanceof DecimalColumn) {
-            if (other instanceof DecimalColumn) {
-                return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
-                        && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
-            }
-            return other.getJdbcType() == JDBCType.NUMERIC;
-        }
-        switch (one.getJdbcType()) {
-            case NUMERIC:
-                switch (other.getJdbcType()) {
-                    case NUMERIC:
-                    case DECIMAL:
-                        return true;
-                }
-            default:
-                return one.getJdbcType() == other.getJdbcType();
-        }
-    }
-
-    @Override
-    public boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName) {
-        return false;
-    }
-
-    @Override
-    public String makeReadSetQuery(SetColumn sqlSetColumn) {
-        return null;
-    }
-
-    @Override
-    public Set<String> extractSetValues(String string) {
-        return null;
-    }
 }

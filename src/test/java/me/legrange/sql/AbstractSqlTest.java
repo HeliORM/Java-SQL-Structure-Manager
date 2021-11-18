@@ -20,59 +20,57 @@ class AbstractSqlTest {
 
     private static DataSource jdbcDataSource;
     protected static SqlModeller modeller;
-    protected static SqlVerifier manager;
+    protected static SqlVerifier verifier;
     protected static TestDatabase db = new TestDatabase("neutral");
     protected static TestTable table = new TestTable(db, "Person");
 
     @Container
     public static GenericContainer mariadb = new GenericContainer(DockerImageName.parse("mariadb"))
             .withExposedPorts(3306)
-            .withEnv("MYSQL_DATABASE","neutral")
-            .withEnv("MYSQL_ROOT_PASSWORD","dev");
+            .withEnv("MYSQL_DATABASE", "neutral")
+            .withEnv("MYSQL_ROOT_PASSWORD", "dev");
 
     @Container
     public static GenericContainer postgres = new GenericContainer(DockerImageName.parse("postgres"))
             .withExposedPorts(5432)
-            .withEnv("POSTGRES_DB","neutral")
-            .withEnv("POSTGRES_PASSWORD","dev");
+            .withEnv("POSTGRES_DB", "neutral")
+            .withEnv("POSTGRES_PASSWORD", "dev");
 
 
     @BeforeAll
     public static void setup() throws Exception {
         String dbType = System.getenv("TEST_DB");
         dbType = (dbType == null) ? "" : dbType;
-        Driver driver = null;
         switch (dbType) {
             case "postgresql":
                 jdbcDataSource = setupPostgreSqlDatasource();
-                driver = Driver.posgresql();
+                modeller = SqlModeller.postgres(() -> {
+                    try {
+                        return jdbcDataSource.getConnection();
+                    } catch (SQLException ex) {
+                        throw new RuntimeException(ex.getMessage(), ex);
+                    }
+                });
                 break;
             case "mysql":
             default:
                 jdbcDataSource = setupMysqlDataSource();
-                driver = Driver.mysql();
+                modeller = SqlModeller.mysql(() -> {
+                    try {
+                        return jdbcDataSource.getConnection();
+                    } catch (SQLException ex) {
+                        throw new RuntimeException(ex.getMessage(), ex);
+                    }
+                });
                 break;
 
         }
         say("Using %s data source", dbType);
-         manager = SqlVerifier.forPool(() -> {
-            try {
-                return jdbcDataSource.getConnection();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex.getMessage(), ex);
-            }
-        }, driver);
-         manager.setDeleteMissingColumns(true);
-         modeller = new SqlModeller(() -> {
-             try {
-                 return jdbcDataSource.getConnection();
-             } catch (SQLException ex) {
-                 throw new RuntimeException(ex.getMessage(), ex);
-             }
-         }, driver);
+        verifier = SqlVerifier.forModeller(modeller);
+        verifier.setDeleteMissingColumns(true);
     }
 
-    protected static final void say(String fmt, Object... args) {
+    protected static void say(String fmt, Object... args) {
         System.out.printf(fmt, args);
         System.out.println();
     }
@@ -101,7 +99,7 @@ class AbstractSqlTest {
     protected boolean isSameTable(Table one, TestTable other) {
         return one.getDatabase().getName().equals(other.getDatabase().getName())
                 && isSameColumns(one.getColumns(), other.getColumns())
-               && isSameIndexes(one.getIndexes(), other.getIndexes());
+                && isSameIndexes(one.getIndexes(), other.getIndexes());
     }
 
     protected boolean isSameColumns(Set<Column> one, Set<Column> other) {
@@ -123,8 +121,7 @@ class AbstractSqlTest {
         return true;
     }
 
-
-    protected boolean isSameIndexes(Set<Index> one, Set<Index>other) {
+    protected boolean isSameIndexes(Set<Index> one, Set<Index> other) {
         if (one.size() != other.size()) {
             say("Indexes: one.size %d != other.size %d", one.size(), other.size());
             return false;
@@ -156,7 +153,7 @@ class AbstractSqlTest {
                 && one.isNullable() == other.isNullable()
                 && one.isKey() == other.isKey()
                 && one.getName().equals(other.getName())
-                && modeller.typesAreCompatible(one,other);
+                && modeller.typesAreCompatible(one, other);
         if (!same) {
             say("one %s\n\tvs\nother %s", one, other);
 

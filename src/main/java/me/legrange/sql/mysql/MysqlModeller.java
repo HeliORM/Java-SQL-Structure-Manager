@@ -1,4 +1,4 @@
-package me.legrange.sql.driver;
+package me.legrange.sql.mysql;
 
 import me.legrange.sql.BitColumn;
 import me.legrange.sql.BooleanColumn;
@@ -8,32 +8,44 @@ import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
+import me.legrange.sql.SqlModeller;
 import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
+import java.sql.Connection;
 import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-public class MySqlDriver extends GenericSqlDriver {
-
-    public MySqlDriver() {
+public final class MysqlModeller extends SqlModeller {
+    /**
+     * Create a new modeller with the given connection supplier.
+     *
+     * @param supplier The connection supplier
+     */
+    public MysqlModeller(Supplier<Connection> supplier) {
+        super(supplier);
     }
+
+    @Override
+    protected boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
+        return typeName.equals("ENUM");
+    }
+
 
     @Override
     public String getDatabaseName(Database database) {
         return format("`%s`", database.getName());
     }
 
-    @Override
     public String getTableName(Table table) {
         return format("`%s`", table.getName());
     }
 
-    @Override
     public String getCreateType(Column column) {
         String typeName = column.getJdbcType().getName();
         StringBuilder type = new StringBuilder();
@@ -53,7 +65,7 @@ public class MySqlDriver extends GenericSqlDriver {
                     .map(val -> "'" + val + "'")
                     .reduce((v1, v2) -> v1 + "," + v2).get()
                     + ")";
-        } else if (column instanceof StringColumn)  {
+        } else if (column instanceof StringColumn) {
             int length = ((StringColumn) column).getLength();
             if (length >= 16777215) {
                 typeName = "LONGTEXT";
@@ -65,7 +77,7 @@ public class MySqlDriver extends GenericSqlDriver {
                 typeName = format("VARCHAR(%d)", length);
             }
         } else if (column instanceof DecimalColumn) {
-            typeName = format("DECIMAL(%d,%d)",((DecimalColumn) column).getPrecision(), ((DecimalColumn) column).getScale());
+            typeName = format("DECIMAL(%d,%d)", ((DecimalColumn) column).getPrecision(), ((DecimalColumn) column).getScale());
         }
         type.append(typeName);
         if (!column.isNullable()) {
@@ -80,13 +92,11 @@ public class MySqlDriver extends GenericSqlDriver {
         return type.toString();
     }
 
-    @Override
     public String getColumnName(Column column) {
         return format("`%s`", column.getName());
     }
 
-    @Override
-    public String getIndexName(Index index) {
+    protected String getIndexName(Index index) {
         return format("`%s`", index.getName());
     }
 
@@ -95,12 +105,7 @@ public class MySqlDriver extends GenericSqlDriver {
         return false;
     }
 
-    @Override
-    public boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
-        return typeName.equals("ENUM");
-    }
 
-    @Override
     public String makeReadEnumQuery(EnumColumn column) {
         return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
                 "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'", column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName());
@@ -123,7 +128,6 @@ public class MySqlDriver extends GenericSqlDriver {
     public boolean isSetColumn(String columnName, JDBCType jdbcType, String typeName) {
         return typeName.equals("SET");
     }
-
 
     @Override
     public String makeReadSetQuery(SetColumn column) {
@@ -165,20 +169,17 @@ public class MySqlDriver extends GenericSqlDriver {
             if (other instanceof BooleanColumn) {
                 return ((BitColumn) one).getBits() == 1;
             }
-        }
-        else if (one instanceof BooleanColumn) {
+        } else if (one instanceof BooleanColumn) {
             if (other instanceof BooleanColumn) {
                 return true;
-            }
-            else if (other instanceof BitColumn) {
+            } else if (other instanceof BitColumn) {
                 return ((BitColumn) other).getBits() == 1;
             }
         } else if (one instanceof StringColumn) {
             if (other instanceof StringColumn) {
                 return actualTextLength((StringColumn) one) == actualTextLength((StringColumn) other);
             }
-        }
-        else if (one instanceof DecimalColumn) {
+        } else if (one instanceof DecimalColumn) {
             if (other instanceof DecimalColumn) {
                 return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
                         && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
@@ -186,5 +187,6 @@ public class MySqlDriver extends GenericSqlDriver {
         }
         return one.getJdbcType() == other.getJdbcType();
     }
+
 
 }

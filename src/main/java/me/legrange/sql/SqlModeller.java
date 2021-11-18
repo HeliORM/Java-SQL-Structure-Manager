@@ -1,5 +1,8 @@
 package me.legrange.sql;
 
+import me.legrange.sql.mysql.MysqlModeller;
+import me.legrange.sql.postgres.PostgresModeller;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
@@ -12,24 +15,30 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
-public final class SqlModeller {
+public abstract class SqlModeller {
+
+    public static SqlModeller mysql(Supplier<Connection> supplier) {
+        return new MysqlModeller(supplier);
+    }
+
+    public static SqlModeller postgres(Supplier<Connection> supplier) {
+        return new PostgresModeller(supplier);
+    }
 
     private final Supplier<Connection> supplier;
-    private final Driver driver;
 
     /**
      * Create a new modeller with the given connection supplier and driver.
      *
      * @param supplier The connection supplier
-     * @param driver   The driver
      */
-    SqlModeller(Supplier<Connection> supplier, Driver driver) {
+    protected SqlModeller(Supplier<Connection> supplier) {
         this.supplier = supplier;
-        this.driver = driver;
     }
 
     /**
@@ -39,9 +48,7 @@ public final class SqlModeller {
      * @param other The other column
      * @return True if the same
      */
-    public boolean typesAreCompatible(Column one, Column other) {
-        return driver.typesAreCompatible(one, other);
-    }
+    protected abstract boolean typesAreCompatible(Column one, Column other);
 
     /**
      * Read a database from SQL and return a model for it.
@@ -145,12 +152,11 @@ public final class SqlModeller {
      */
     public void createTable(Table table) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeCreateTableQuery(table));
+            stmt.executeUpdate(makeCreateTableQuery(table));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()));
         }
     }
-
 
     /**
      * Delete a table from SQL
@@ -160,7 +166,7 @@ public final class SqlModeller {
      */
     public void deleteTable(Table table) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeDeleteTableQuery(table));
+            stmt.executeUpdate(makeDeleteTableQuery(table));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()));
         }
@@ -174,7 +180,7 @@ public final class SqlModeller {
      */
     public void addColumn(Column column) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeAddColumnQuery(column));
+            stmt.executeUpdate(makeAddColumnQuery(column));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
@@ -189,7 +195,7 @@ public final class SqlModeller {
      */
     public void renameColumn(Column current, Column changed) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeRenameColumnQuery(current, changed));
+            stmt.executeUpdate(makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -204,11 +210,12 @@ public final class SqlModeller {
      */
     public void deleteColumn(Column column) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeDeleteColumnQuery(column));
+            stmt.executeUpdate(makeDeleteColumnQuery(column));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
     }
+
 
     /**
      * Modify a column in SQL.
@@ -218,11 +225,12 @@ public final class SqlModeller {
      */
     public void modifyColumn(Column current) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeModifyColumnQuery(current));
+            stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
+
 
     /**
      * Add an index to a SQL table.
@@ -232,7 +240,7 @@ public final class SqlModeller {
      */
     public void addIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeAddIndexQuery(index));
+            stmt.executeUpdate(makeAddIndexQuery(index));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
@@ -247,7 +255,7 @@ public final class SqlModeller {
      */
     public void renameIndex(Index current, Index changed) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeRenameIndexQuery(current, changed));
+            stmt.executeUpdate(makeRenameIndexQuery(current, changed));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
@@ -262,8 +270,8 @@ public final class SqlModeller {
      */
     public void modifyIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            if (driver.supportsAlterIndex()) {
-                stmt.executeUpdate(driver.makeModifyIndexQuery(index));
+            if (supportsAlterIndex()) {
+                stmt.executeUpdate(makeModifyIndexQuery(index));
             } else {
                 removeIndex(index);
                 addIndex(index);
@@ -273,6 +281,8 @@ public final class SqlModeller {
         }
     }
 
+    protected abstract boolean supportsAlterIndex();
+
     /**
      * Remove an index from a SQL table.
      *
@@ -281,11 +291,12 @@ public final class SqlModeller {
      */
     public void removeIndex(Index index) throws SqlManagerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
-            stmt.executeUpdate(driver.makeRemoveIndexQuery(index));
+            stmt.executeUpdate(makeRemoveIndexQuery(index));
         } catch (SQLException ex) {
             throw new SqlManagerException(format("Error removing index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
     }
+
 
     /**
      * Deterime if a table exists in a database in SQL
@@ -333,25 +344,25 @@ public final class SqlModeller {
             String colunmName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
 
-            if (driver.isEnumColumn(colunmName, jdbcType, typeName)) {
+            if (isEnumColumn(colunmName, jdbcType, typeName)) {
                 Set<String> values = Collections.emptySet();
-                String query = driver.makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, values));
+                String query = makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, values));
                 try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
                     if (ers.next()) {
-                        values = driver.extractEnumValues(ers.getString(1));
+                        values = extractEnumValues(ers.getString(1));
                     }
                 }
                 return new SqlEnumColumn(table, colunmName, nullable, values);
-            } else if (driver.isSetColumn(colunmName, jdbcType, typeName)) {
+            } else if (isSetColumn(colunmName, jdbcType, typeName)) {
                 Set<String> values = Collections.emptySet();
-                String query = driver.makeReadSetQuery(new SqlSetColumn(table, colunmName, nullable, values));
+                String query = makeReadSetQuery(new SqlSetColumn(table, colunmName, nullable, values));
                 try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
                     if (ers.next()) {
-                        values = driver.extractSetValues(ers.getString(1));
+                        values = extractSetValues(ers.getString(1));
                     }
                 }
                 return new SqlSetColumn(table, colunmName, nullable, values);
-            } else if (driver.isStringColumn(colunmName, jdbcType, typeName)) {
+            } else if (isStringColumn(colunmName, jdbcType, typeName)) {
                 return new SqlStringColumn(table, colunmName, jdbcType, nullable, size.get());
             }
             switch (jdbcType) {
@@ -370,12 +381,139 @@ public final class SqlModeller {
         }
     }
 
+
+    protected abstract Set<String> extractSetValues(String string);
+
+    protected abstract boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName);
+
+    protected abstract Set<String> extractEnumValues(String string);
+
+    protected abstract String makeReadEnumQuery(EnumColumn sqlEnumColumn);
+
     private String databaseName(Database database) {
-        return driver.getDatabaseName(database);
+        return getDatabaseName(database);
     }
+
+    protected abstract String getDatabaseName(Database database);
 
     private Connection con() {
         return supplier.get();
     }
 
+    protected abstract boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName);
+
+    protected final int actualTextLength(StringColumn column) {
+        int length = column.getLength();
+        if (length >= 16777215) {
+            return 2147483647;
+        } else if (length > 65535) {
+            return 16777215;
+        } else if (length > 255) {
+            return 65535;
+        }
+        return 255;
+    }
+
+    protected String makeCreateTableQuery(Table table) {
+        StringJoiner body = new StringJoiner(",");
+        for (Column column : table.getColumns()) {
+            body.add(format("%s %s", getColumnName(column), getCreateType(column)));
+        }
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("CREATE TABLE %s (", getTableName(table)));
+        sql.append(body);
+        sql.append(")");
+        return sql.toString();
+    }
+
+    protected abstract String getColumnName(Column column);
+
+    protected abstract String getCreateType(Column column);
+
+    protected abstract String getTableName(Table table);
+
+    protected String makeDeleteTableQuery(Table table) {
+        return format("DROP TABLE %s", getTableName(table));
+    }
+
+
+    protected String makeModifyIndexQuery(Index index) {
+        return format("ALTER %sINDEX %s ON %s %s",
+                index.isUnique() ? "UNIQUE " : "",
+                getIndexName(index),
+                getTableName(index.getTable()),
+                index.getColumns().stream()
+                        .map(column -> getColumnName(column))
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
+    }
+
+
+    protected String makeRenameColumnQuery(Column column, Column changed) {
+        return format("ALTER TABLE %s RENAME COLUMN %s TO %s",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getColumnName(changed));
+    }
+
+
+    protected String makeDeleteColumnQuery(Column column) {
+        return format("ALTER TABLE %s DROP COLUMN %s",
+                getTableName(column.getTable()),
+                getColumnName(column));
+    }
+
+
+    protected String makeModifyColumnQuery(Column column) {
+        return format("ALTER TABLE %s MODIFY COLUMN %s %s",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getCreateType(column));
+    }
+
+
+    protected String makeAddColumnQuery(Column column) {
+        return format("ALTER TABLE %s ADD COLUMN %s %s",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getCreateType(column));
+    }
+
+
+    protected String makeAddIndexQuery(Index index) {
+        return format("CREATE %sINDEX %s on %s (%s)",
+                index.isUnique() ? "UNIQUE " : "",
+                getIndexName(index),
+                getTableName(index.getTable()),
+                index.getColumns().stream()
+                        .map(column -> getColumnName(column))
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
+    }
+
+    protected String makeRemoveIndexQuery(Index index) {
+        return format("DROP INDEX %s on %s",
+                getIndexName(index),
+                getTableName(index.getTable()));
+    }
+
+    protected abstract String getIndexName(Index index);
+
+    protected boolean isStringColumn(String colunmName, JDBCType jdbcType, String typeName) {
+        switch (jdbcType) {
+            case CHAR:
+            case VARCHAR:
+            case LONGVARCHAR:
+                return true;
+        }
+        return false;
+    }
+
+    protected abstract String makeReadSetQuery(SetColumn column);
+
+
+    protected String makeRenameIndexQuery(Index current, Index changed) {
+        return format("ALTER TABLE INDEX %s RENAME INDEX %s to %s",
+                getTableName(current.getTable()),
+                getIndexName(current),
+                getIndexName(changed));
+    }
 }

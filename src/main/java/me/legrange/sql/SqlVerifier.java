@@ -1,29 +1,23 @@
 package me.legrange.sql;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class SqlVerifier {
 
-    private final Supplier<Connection> supplier;
-    private final Driver driver;
     private final SqlModeller modeller;
     private boolean deleteMissingColumns = false;
 
-    public static SqlVerifier forPool(Supplier<Connection> supplier, Driver driver) {
-        return new SqlVerifier(supplier, driver);
+    public static SqlVerifier forModeller(SqlModeller modeller) {
+        return new SqlVerifier(modeller);
     }
 
-    private SqlVerifier(Supplier<Connection> supplier, Driver driver) {
-        this.supplier = supplier;
-        this.driver = driver;
-        this.modeller = new SqlModeller(supplier, driver);
+    private SqlVerifier(SqlModeller modeller) {
+        this.modeller = modeller;
     }
 
     void setDeleteMissingColumns(boolean delete) {
