@@ -101,14 +101,22 @@ public final class MysqlModeller extends SqlModeller {
     }
 
     @Override
-    public boolean supportsAlterIndex() {
+    protected boolean supportsAlterIndex() {
         return false;
     }
 
+    @Override
+    protected boolean supportsSet() {
+        return true;
+    }
 
-    public String makeReadEnumQuery(EnumColumn column) {
+    @Override
+    protected  String makeReadEnumQuery(EnumColumn column) {
         return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
-                "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'", column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName());
+                "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'",
+                column.getTable().getDatabase().getName(),
+                column.getTable().getName(),
+                column.getName());
     }
 
     @Override
@@ -116,8 +124,9 @@ public final class MysqlModeller extends SqlModeller {
         return format("ALTER TABLE %s RENAME INDEX %s TO %s", getTableName(current.getTable()), getIndexName(current), getIndexName(changed));
     }
 
+
     @Override
-    public Set<String> extractEnumValues(String text) {
+    protected final Set<String> extractEnumValues(String text) {
         return Arrays.stream(text.replace("enum", "").replace("(", "").replace(")", "")
                         .split(","))
                 .map(val -> val.substring(1, val.length() - 1))
@@ -187,6 +196,5 @@ public final class MysqlModeller extends SqlModeller {
         }
         return one.getJdbcType() == other.getJdbcType();
     }
-
 
 }

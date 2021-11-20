@@ -20,8 +20,8 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(10)
     public void createTable() throws SqlManagerException {
-        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER,  false, true, true));
-        table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR,  42));
+        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, false, true, true));
+        table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR, 42));
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
         if (modeller.tableExists(table)) {
             say("Removing table %s", table.getName());
@@ -36,7 +36,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Order(20)
     public void addStringColumn() throws SqlManagerException {
         TestColumn email = new TestStringColumn(table, "email", JDBCType.VARCHAR, 128);
-        table.addColumn(new TestStringColumn(table, "email", JDBCType.VARCHAR,  128));
+        table.addColumn(new TestStringColumn(table, "email", JDBCType.VARCHAR, 128));
         modeller.addColumn(email);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
@@ -67,7 +67,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Order(30)
     public void addLongTextColumn() throws SqlManagerException {
         TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR, 10000);
-        TestColumn lnotes = new TestStringColumn(table, "longNotes", JDBCType.LONGVARCHAR,16*1024*1024);
+        TestColumn lnotes = new TestStringColumn(table, "longNotes", JDBCType.LONGVARCHAR, 16 * 1024 * 1024);
         table.addColumn(notes);
         table.addColumn(lnotes);
         modeller.addColumn(notes);
@@ -79,7 +79,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(30)
     public void addDecimalColumn() throws SqlManagerException {
-        TestColumn amount = new TestDecimalColumn(table, "amount", 18,2);
+        TestColumn amount = new TestDecimalColumn(table, "amount", 18, 2);
         table.addColumn(amount);
         modeller.addColumn(amount);
         Table loaded = modeller.readTable(db, "Person");
@@ -89,7 +89,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(40)
     public void addEnumColumn() throws SqlManagerException {
-        TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "BEAST")));
+        TestColumn type = new TestEnumColumn(table, "type", true, new HashSet<>(Arrays.asList("APE", "BEAST")));
         table.addColumn(type);
         modeller.addColumn(type);
         Table loaded = modeller.readTable(db, "Person");
@@ -99,7 +99,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(50)
     public void addEnumValue() throws SqlManagerException {
-        TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "BEAST", "COW")));
+        TestColumn type = new TestEnumColumn(table, "type", true, new HashSet<>(Arrays.asList("APE", "BEAST", "COW")));
         table.addColumn(type);
         modeller.modifyColumn(type);
         Table loaded = modeller.readTable(db, "Person");
@@ -109,7 +109,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(60)
     public void removeEnumValue() throws SqlManagerException {
-        TestColumn type = new TestEnumColumn(table, "type",true,  new HashSet<>(Arrays.asList("APE", "COW")));
+        TestColumn type = new TestEnumColumn(table, "type", true, new HashSet<>(Arrays.asList("APE", "COW")));
         table.addColumn(type);
         modeller.modifyColumn(type);
         Table loaded = modeller.readTable(db, "Person");
@@ -120,38 +120,44 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(61)
     public void addSetColumn() throws SqlManagerException {
-        TestColumn col = new TestSetColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
-        table.addColumn(col);
-        modeller.addColumn(col);
-        Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        if (modeller.supportsSet()) {
+            TestColumn col = new TestSetColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
+            table.addColumn(col);
+            modeller.addColumn(col);
+            Table loaded = modeller.readTable(db, "Person");
+            assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        }
     }
 
     @Test
     @Order(62)
     public void addSetValue() throws SqlManagerException {
-        TestColumn col = new TestSetColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST", "2ND BREAKFAST","LUNCH", "DINNER")));
-        table.addColumn(col);
-        modeller.modifyColumn(col);
-        Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        if (modeller.supportsSet()) {
+            TestColumn col = new TestSetColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "2ND BREAKFAST", "LUNCH", "DINNER")));
+            table.addColumn(col);
+            modeller.modifyColumn(col);
+            Table loaded = modeller.readTable(db, "Person");
+            assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        }
     }
 
     @Test
     @Order(63)
     public void removeSetValue() throws SqlManagerException {
-        TestColumn col = new TestEnumColumn(table, "selection",true,  new HashSet<>(Arrays.asList("BREAKFAST","LUNCH", "DINNER")));
-        table.addColumn(col);
-        modeller.modifyColumn(col);
-        Table loaded = modeller.readTable(db, "Person");
-        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        if (modeller.supportsSet()) {
+            TestColumn col = new TestEnumColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
+            table.addColumn(col);
+            modeller.modifyColumn(col);
+            Table loaded = modeller.readTable(db, "Person");
+            assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        }
     }
 
     @Test
     @Order(70)
     public void deleteColumn() throws SqlManagerException {
         TestColumn email = new TestStringColumn(table, "email", JDBCType.VARCHAR, 128);
-        TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR,1000);
+        TestColumn notes = new TestStringColumn(table, "notes", JDBCType.LONGVARCHAR, 1000);
         table.deleteColumn(email);
         table.deleteColumn(notes);
         modeller.deleteColumn(email);
@@ -173,7 +179,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(90)
     public void modifyColumnTypeSmallIntBigInt() throws SqlManagerException {
-        TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT,false, false, false);
+        TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT, false, false, false);
         table.addColumn(age);
         Table loaded = modeller.readTable(db, "Person");
         assertFalse(isSameTable(loaded, table), "Table we modified must not be the same as the one loaded");
@@ -229,7 +235,6 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
 
-
     @Test
     @Order(120)
     public void addColumnToIndex() throws SqlManagerException {
@@ -259,7 +264,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(130)
     public void removeIndex() throws SqlManagerException {
-        Index index =table.getIndex("index1");
+        Index index = table.getIndex("index1");
         table.removeIndex(index);
         modeller.removeIndex(index);
         Table loaded = modeller.readTable(db, "Person");

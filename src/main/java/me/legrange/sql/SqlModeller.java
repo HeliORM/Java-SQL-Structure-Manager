@@ -283,6 +283,8 @@ public abstract class SqlModeller {
 
     protected abstract boolean supportsAlterIndex();
 
+    protected abstract boolean supportsSet();
+
     /**
      * Remove an index from a SQL table.
      *
@@ -345,13 +347,7 @@ public abstract class SqlModeller {
             String typeName = rs.getString("TYPE_NAME");
 
             if (isEnumColumn(colunmName, jdbcType, typeName)) {
-                Set<String> values = Collections.emptySet();
-                String query = makeReadEnumQuery(new SqlEnumColumn(table, colunmName, nullable, values));
-                try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
-                    if (ers.next()) {
-                        values = extractEnumValues(ers.getString(1));
-                    }
-                }
+                Set<String> values = readEnumValues(new SqlEnumColumn(table, colunmName, nullable, Collections.emptySet()));
                 return new SqlEnumColumn(table, colunmName, nullable, values);
             } else if (isSetColumn(colunmName, jdbcType, typeName)) {
                 Set<String> values = Collections.emptySet();
@@ -388,7 +384,21 @@ public abstract class SqlModeller {
 
     protected abstract Set<String> extractEnumValues(String string);
 
-    protected abstract String makeReadEnumQuery(EnumColumn sqlEnumColumn);
+    protected abstract String makeReadEnumQuery(EnumColumn column);
+
+
+    protected final Set<String> readEnumValues(EnumColumn column) throws SqlManagerException {
+        String query = makeReadEnumQuery(column);
+        try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
+            if (ers.next()) {
+                return extractEnumValues(ers.getString(1));
+            }
+            return Collections.EMPTY_SET;
+        } catch (SQLException ex) {
+            throw new SqlManagerException(format("Error reading enum values from %s.%s.%s (%s)",
+                    column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName(), ex.getMessage()), ex);
+        }
+    }
 
     private String databaseName(Database database) {
         return getDatabaseName(database);
@@ -396,7 +406,7 @@ public abstract class SqlModeller {
 
     protected abstract String getDatabaseName(Database database);
 
-    private Connection con() {
+    protected final Connection con() {
         return supplier.get();
     }
 
@@ -443,7 +453,7 @@ public abstract class SqlModeller {
                 getIndexName(index),
                 getTableName(index.getTable()),
                 index.getColumns().stream()
-                        .map(column -> getColumnName(column))
+                        .map(this::getColumnName)
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
@@ -485,7 +495,7 @@ public abstract class SqlModeller {
                 getIndexName(index),
                 getTableName(index.getTable()),
                 index.getColumns().stream()
-                        .map(column -> getColumnName(column))
+                        .map(this::getColumnName)
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
@@ -510,10 +520,6 @@ public abstract class SqlModeller {
     protected abstract String makeReadSetQuery(SetColumn column);
 
 
-    protected String makeRenameIndexQuery(Index current, Index changed) {
-        return format("ALTER TABLE INDEX %s RENAME INDEX %s to %s",
-                getTableName(current.getTable()),
-                getIndexName(current),
-                getIndexName(changed));
-    }
+    protected abstract String makeRenameIndexQuery(Index current, Index changed);
+
 }

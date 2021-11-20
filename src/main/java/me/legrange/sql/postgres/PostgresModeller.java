@@ -8,6 +8,7 @@ import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
+import me.legrange.sql.SqlManagerException;
 import me.legrange.sql.SqlModeller;
 import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
@@ -30,6 +31,16 @@ public final class PostgresModeller extends SqlModeller {
      */
     public PostgresModeller(Supplier<Connection> supplier) {
         super(supplier);
+    }
+
+    @Override
+    public void modifyColumn(Column current) throws SqlManagerException {
+        if (current instanceof EnumColumn) {
+            modifyEnumColumn((EnumColumn) current);
+        }
+        else {
+            super.modifyColumn(current);
+        }
     }
 
     @Override
@@ -83,6 +94,7 @@ public final class PostgresModeller extends SqlModeller {
     protected String makeReadSetQuery(SetColumn sqlSetColumn) {
         return null;
     }
+
 
     @Override
     protected Set<String> extractSetValues(String string) {
@@ -151,12 +163,17 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public boolean supportsAlterIndex() {
+    protected boolean supportsAlterIndex() {
         return true;
     }
 
     @Override
-    public String makeReadEnumQuery(EnumColumn column) {
+    protected boolean supportsSet() {
+        return false;
+    }
+
+    @Override
+    protected String makeReadEnumQuery(EnumColumn column) {
         return format("SELECT ENUM_RANGE(NULL::\"%s\")", typeName(column));
     }
 
@@ -174,11 +191,31 @@ public final class PostgresModeller extends SqlModeller {
         if (column instanceof EnumColumn) {
             buf.append(makeAddEnumTypeQuery((EnumColumn) column));
         }
+        else if (column instanceof SetColumn) {
+            buf.append(makeAddSetTypeQuery((SetColumn) column));
+        }
         buf.append(format("ALTER TABLE %s ADD COLUMN %s %s",
                 getTableName(column.getTable()),
                 getColumnName(column),
                 getCreateType(column)));
         return buf.toString();
+    }
+
+    private void modifyEnumColumn(EnumColumn column) throws SqlManagerException {
+        Set<String> want = column.getEnumValues();
+        Set<String> have = readEnumValues(column);
+        if (!want.equals(have)) {
+            StringJoiner query = new StringJoiner(";");
+            query.add(format("ALTER TYPE %s RENAME TO %s_old", typeName(column), typeName(column)));
+            query.add(makeAddEnumTypeQuery(column));
+            query.add(format("ALTER TABLE %s COLUMN %s TYPE %s USING %s::text::%s",
+                    getTableName(column.getTable()),
+                    getColumnName(column),
+                    typeName(column),
+                    getColumnName(column),
+                    typeName(column)));
+        }
+
     }
 
     private String makeAddEnumTypeQuery(EnumColumn column) {
@@ -197,6 +234,22 @@ public final class PostgresModeller extends SqlModeller {
         return buf.toString();
     }
 
+    private String makeAddSetTypeQuery(SetColumn column) {
+        String typeName = typeName(column);
+        StringJoiner buf = new StringJoiner("\n");
+        buf.add("DO $$");
+        buf.add("BEGIN");
+        buf.add(format("    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '%s') THEN", typeName));
+        buf.add(format("        CREATE TYPE \"%s\" AS SET(", typeName));
+        buf.add(column.getSetValues().stream()
+                .map(v -> "'" + v + "'")
+                .reduce((a, b) -> a + "," + b).get());
+        buf.add(");");
+        buf.add("    END IF;");
+        buf.add("END$$;");
+        return buf.toString();
+    }
+
     /**
      * Create the basic type declaration for a column excluding annotations like keys and nullability
      *
@@ -207,6 +260,9 @@ public final class PostgresModeller extends SqlModeller {
         StringBuilder type = new StringBuilder();
         String typeName;
         if (column instanceof EnumColumn) {
+            typeName = "\"" + typeName(column) + "\"";
+        }
+        else if (column instanceof SetColumn) {
             typeName = "\"" + typeName(column) + "\"";
         } else if (column instanceof StringColumn) {
             int length = ((StringColumn) column).getLength();
@@ -287,5 +343,12 @@ public final class PostgresModeller extends SqlModeller {
         }
 
     }
+
+    protected String makeRenameIndexQuery(Index current, Index changed) {
+        return format("ALTER INDEX %s RENAME to %s",
+                getIndexName(current),
+                getIndexName(changed));
+    }
+
 
 }
