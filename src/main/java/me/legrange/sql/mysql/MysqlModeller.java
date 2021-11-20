@@ -9,11 +9,14 @@ import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
 import me.legrange.sql.SqlModeller;
+import me.legrange.sql.SqlModellerException;
 import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
 import java.sql.Connection;
 import java.sql.JDBCType;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -32,21 +35,38 @@ public final class MysqlModeller extends SqlModeller {
     }
 
     @Override
+    public void modifyIndex(Index index) throws SqlModellerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            removeIndex(index);
+            addIndex(index);
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error modifying index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+        }
+    }
+
+    @Override
+    public boolean supportsSet() {
+        return true;
+    }
+
+    @Override
     protected boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
         return typeName.equals("ENUM");
     }
 
 
     @Override
-    public String getDatabaseName(Database database) {
+    protected String getDatabaseName(Database database) {
         return format("`%s`", database.getName());
     }
 
-    public String getTableName(Table table) {
+    @Override
+    protected String getTableName(Table table) {
         return format("`%s`", table.getName());
     }
 
-    public String getCreateType(Column column) {
+    @Override
+    protected String getCreateType(Column column) {
         String typeName = column.getJdbcType().getName();
         StringBuilder type = new StringBuilder();
         if (column instanceof EnumColumn) {
@@ -92,38 +112,29 @@ public final class MysqlModeller extends SqlModeller {
         return type.toString();
     }
 
-    public String getColumnName(Column column) {
+    @Override
+    protected String getColumnName(Column column) {
         return format("`%s`", column.getName());
     }
 
+    @Override
     protected String getIndexName(Index index) {
         return format("`%s`", index.getName());
     }
 
     @Override
-    protected boolean supportsAlterIndex() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsSet() {
-        return true;
-    }
-
-    @Override
-    protected  String makeReadEnumQuery(EnumColumn column) {
+    protected String makeReadEnumQuery(EnumColumn column) {
         return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
-                "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'",
+                        "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'",
                 column.getTable().getDatabase().getName(),
                 column.getTable().getName(),
                 column.getName());
     }
 
     @Override
-    public String makeRenameIndexQuery(Index current, Index changed) {
+    protected String makeRenameIndexQuery(Index current, Index changed) {
         return format("ALTER TABLE %s RENAME INDEX %s TO %s", getTableName(current.getTable()), getIndexName(current), getIndexName(changed));
     }
-
 
     @Override
     protected final Set<String> extractEnumValues(String text) {
@@ -134,27 +145,26 @@ public final class MysqlModeller extends SqlModeller {
     }
 
     @Override
-    public boolean isSetColumn(String columnName, JDBCType jdbcType, String typeName) {
+    protected boolean isSetColumn(String columnName, JDBCType jdbcType, String typeName) {
         return typeName.equals("SET");
     }
 
     @Override
-    public String makeReadSetQuery(SetColumn column) {
+    protected String makeReadSetQuery(SetColumn column) {
         return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
                 "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'", column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName());
     }
 
     @Override
-    public Set<String> extractSetValues(String text) {
+    protected Set<String> extractSetValues(String text) {
         return Arrays.stream(text.replace("enum", "").replace("(", "").replace(")", "")
                         .split(","))
                 .map(val -> val.substring(1, val.length() - 1))
                 .collect(Collectors.toSet());
     }
 
-
     @Override
-    public boolean typesAreCompatible(Column one, Column other) {
+    protected boolean typesAreCompatible(Column one, Column other) {
         if (one instanceof EnumColumn) {
             if (other instanceof EnumColumn) {
                 Set<String> ones = ((EnumColumn) one).getEnumValues();

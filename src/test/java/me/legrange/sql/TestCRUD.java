@@ -85,6 +85,16 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(31)
+    public void modifyDecimalColumn() throws SqlModellerException {
+        TestColumn amount = new TestDecimalColumn(table, "amount", 18, 5);
+        table.addColumn(amount);
+        modeller.modifyColumn(amount);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
     @Order(40)
     public void addEnumColumn() throws SqlModellerException {
         TestColumn type = new TestEnumColumn(table, "type", true, new HashSet<>(Arrays.asList("APE", "BEAST")));

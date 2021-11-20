@@ -23,3 +23,6 @@ jobs:
         distribution: 'adopt'
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+    - name: Test MySQL
+      run: export TEST_DB=mysql && mvn -B test --file pom.xml
+

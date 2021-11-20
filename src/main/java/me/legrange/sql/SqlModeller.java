@@ -57,7 +57,7 @@ public abstract class SqlModeller {
      * @return The model
      * @throws SqlModellerException Thrown if there is a problem reading the model
      */
-    public Database readDatabase(String name) throws SqlModellerException {
+    public final Database readDatabase(String name) throws SqlModellerException {
         SqlDatabase database = new SqlDatabase(name);
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
@@ -80,7 +80,7 @@ public abstract class SqlModeller {
      * @return The table model
      * @throws SqlModellerException Thrown if there is a problem reading the model
      */
-    public Table readTable(Database database, String name) throws SqlModellerException {
+    public final Table readTable(Database database, String name) throws SqlModellerException {
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
             SqlTable table = new SqlTable(database, name);
@@ -140,8 +140,15 @@ public abstract class SqlModeller {
      * @return Does it exist?
      * @throws SqlModellerException Thrown if there is a problem
      */
-    public boolean tableExists(Table table) throws SqlModellerException {
-        return tableExists(table.getDatabase(), table.getName());
+    public final boolean tableExists(Table table) throws SqlModellerException {
+        try (Connection con = con()) {
+            DatabaseMetaData dbm = con.getMetaData();
+            try (ResultSet tables = dbm.getTables(databaseName(table.getDatabase()), null, table.getName(), null)) {
+                return tables.next();
+            }
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error checking table '%s' (%s)", table.getName(), ex.getMessage()));
+        }
     }
 
     /**
@@ -150,7 +157,7 @@ public abstract class SqlModeller {
      * @param table The table model
      * @throws SqlModellerException Thrown if there is a problem creating the table
      */
-    public void createTable(Table table) throws SqlModellerException {
+    public final void createTable(Table table) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeCreateTableQuery(table));
         } catch (SQLException ex) {
@@ -164,7 +171,7 @@ public abstract class SqlModeller {
      * @param table The table model
      * @throws SqlModellerException Thrown if there is a problem deleting the table
      */
-    public void deleteTable(Table table) throws SqlModellerException {
+    public final void deleteTable(Table table) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeDeleteTableQuery(table));
         } catch (SQLException ex) {
@@ -178,7 +185,7 @@ public abstract class SqlModeller {
      * @param column The column to add
      * @throws SqlModellerException Thrown if there is a problem adding the column
      */
-    public void addColumn(Column column) throws SqlModellerException {
+    public final void addColumn(Column column) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddColumnQuery(column));
         } catch (SQLException ex) {
@@ -193,7 +200,7 @@ public abstract class SqlModeller {
      * @param changed The changed column
      * @throws SqlModellerException Thrown if there is a problem reaming the column
      */
-    public void renameColumn(Column current, Column changed) throws SqlModellerException {
+    public final void renameColumn(Column current, Column changed) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
@@ -208,7 +215,7 @@ public abstract class SqlModeller {
      * @param column The column to delete
      * @throws SqlModellerException Thrown if there is a problem deleting the column
      */
-    public void deleteColumn(Column column) throws SqlModellerException {
+    public final void deleteColumn(Column column) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeDeleteColumnQuery(column));
         } catch (SQLException ex) {
@@ -238,7 +245,7 @@ public abstract class SqlModeller {
      * @param index The index to add
      * @throws SqlModellerException
      */
-    public void addIndex(Index index) throws SqlModellerException {
+    public final void addIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddIndexQuery(index));
         } catch (SQLException ex) {
@@ -253,13 +260,12 @@ public abstract class SqlModeller {
      * @param changed The changed index
      * @throws SqlModellerException
      */
-    public void renameIndex(Index current, Index changed) throws SqlModellerException {
+    public final void renameIndex(Index current, Index changed) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameIndexQuery(current, changed));
         } catch (SQLException ex) {
             throw new SqlModellerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
-
     }
 
     /**
@@ -268,22 +274,14 @@ public abstract class SqlModeller {
      * @param index The index to modify
      * @throws SqlModellerException
      */
-    public void modifyIndex(Index index) throws SqlModellerException {
-        try (Connection con = con(); Statement stmt = con.createStatement()) {
-            if (supportsAlterIndex()) {
-                stmt.executeUpdate(makeModifyIndexQuery(index));
-            } else {
-                removeIndex(index);
-                addIndex(index);
-            }
-        } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error modifying index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
-        }
-    }
+    public abstract void modifyIndex(Index index) throws SqlModellerException;
 
-    protected abstract boolean supportsAlterIndex();
-
-    protected abstract boolean supportsSet();
+    /**
+     * Check if a modeller supports SET types
+     *
+     * @return True if it does
+     */
+    public abstract boolean supportsSet();
 
     /**
      * Remove an index from a SQL table.
@@ -291,95 +289,13 @@ public abstract class SqlModeller {
      * @param index The index to remove
      * @throws SqlModellerException
      */
-    public void removeIndex(Index index) throws SqlModellerException {
+    public final void removeIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRemoveIndexQuery(index));
         } catch (SQLException ex) {
             throw new SqlModellerException(format("Error removing index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
     }
-
-
-    /**
-     * Deterime if a table exists in a database in SQL
-     *
-     * @param db        The database
-     * @param tableName The table name
-     * @return Does it exist?
-     * @throws SqlModellerException Thrown if there is a problem
-     */
-    private boolean tableExists(Database db, String tableName) throws SqlModellerException {
-        try (Connection con = con()) {
-            DatabaseMetaData dbm = con.getMetaData();
-            try (ResultSet tables = dbm.getTables(databaseName(db), null, tableName, null)) {
-                return tables.next();
-            }
-        } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error checking table '%s' (%s)", tableName, ex.getMessage()));
-        }
-    }
-
-    /**
-     * Read a column model from a SQL result set.
-     *
-     * @param table The table for the column
-     * @param rs    The result set
-     * @return The column mode
-     * @throws SqlModellerException
-     */
-    private SqlColumn getColumnFromResultSet(Table table, ResultSet rs) throws SqlModellerException {
-        try {
-            JDBCType jdbcType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
-            Optional<Integer> size;
-            switch (jdbcType) {
-                case CHAR:
-                case VARCHAR:
-                case LONGVARCHAR:
-                case DECIMAL:
-                case BIT:
-                    size = Optional.of(rs.getInt("COLUMN_SIZE"));
-                    break;
-                default:
-                    size = Optional.empty();
-            }
-            boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
-            boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
-            String colunmName = rs.getString("COLUMN_NAME");
-            String typeName = rs.getString("TYPE_NAME");
-
-            if (isEnumColumn(colunmName, jdbcType, typeName)) {
-                Set<String> values = readEnumValues(new SqlEnumColumn(table, colunmName, nullable, Collections.emptySet()));
-                return new SqlEnumColumn(table, colunmName, nullable, values);
-            } else if (isSetColumn(colunmName, jdbcType, typeName)) {
-                Set<String> values = Collections.emptySet();
-                String query = makeReadSetQuery(new SqlSetColumn(table, colunmName, nullable, values));
-                try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
-                    if (ers.next()) {
-                        values = extractSetValues(ers.getString(1));
-                    }
-                }
-                return new SqlSetColumn(table, colunmName, nullable, values);
-            } else if (isStringColumn(colunmName, jdbcType, typeName)) {
-                return new SqlStringColumn(table, colunmName, jdbcType, nullable, size.get());
-            }
-            switch (jdbcType) {
-                case BIT:
-                    return new SqlBitColumn(table, colunmName, nullable, size.get());
-                case BOOLEAN:
-                    return new SqlBooleanColumn(table, colunmName, nullable);
-                case DECIMAL:
-                    return new SqlDecimalColumn(table, colunmName,nullable, size.get(), rs.getInt("DECIMAL_DIGITS"));
-            }
-            return new SqlColumn(table,
-                    colunmName,
-                    jdbcType,
-                    nullable,
-                    autoIncrement);
-        } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error reading SQL column information (%s)", ex.getMessage()), ex);
-        }
-    }
-
 
     protected abstract Set<String> extractSetValues(String string);
 
@@ -388,7 +304,6 @@ public abstract class SqlModeller {
     protected abstract Set<String> extractEnumValues(String string);
 
     protected abstract String makeReadEnumQuery(EnumColumn column);
-
 
     protected final Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
         String query = makeReadEnumQuery(column);
@@ -403,8 +318,18 @@ public abstract class SqlModeller {
         }
     }
 
-    private String databaseName(Database database) {
-        return getDatabaseName(database);
+    private Set<String> readSetValues(SetColumn column) throws SqlModellerException {
+        String query = makeReadSetQuery(column);
+        try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
+            if (ers.next()) {
+                return extractSetValues(ers.getString(1));
+            }
+            return Collections.EMPTY_SET;
+        }
+        catch (SQLException ex) {
+            throw new SqlModellerException(format("Error reading set values from %s.%s.%s (%s)",
+                    column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName(), ex.getMessage()), ex);
+        }
     }
 
     protected abstract String getDatabaseName(Database database);
@@ -445,10 +370,9 @@ public abstract class SqlModeller {
 
     protected abstract String getTableName(Table table);
 
-    protected String makeDeleteTableQuery(Table table) {
+    private String makeDeleteTableQuery(Table table) {
         return format("DROP TABLE %s", getTableName(table));
     }
-
 
     protected String makeModifyIndexQuery(Index index) {
         return format("ALTER %sINDEX %s ON %s %s",
@@ -522,7 +446,63 @@ public abstract class SqlModeller {
 
     protected abstract String makeReadSetQuery(SetColumn column);
 
-
     protected abstract String makeRenameIndexQuery(Index current, Index changed);
+
+    /**
+     * Read a column model from a SQL result set.
+     *
+     * @param table The table for the column
+     * @param rs    The result set
+     * @return The column mode
+     * @throws SqlModellerException
+     */
+    private SqlColumn getColumnFromResultSet(Table table, ResultSet rs) throws SqlModellerException {
+        try {
+            JDBCType jdbcType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
+            Optional<Integer> size;
+            switch (jdbcType) {
+                case CHAR:
+                case VARCHAR:
+                case LONGVARCHAR:
+                case DECIMAL:
+                case BIT:
+                    size = Optional.of(rs.getInt("COLUMN_SIZE"));
+                    break;
+                default:
+                    size = Optional.empty();
+            }
+            boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
+            boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
+            String colunmName = rs.getString("COLUMN_NAME");
+            String typeName = rs.getString("TYPE_NAME");
+
+            if (isEnumColumn(colunmName, jdbcType, typeName)) {
+                return new SqlEnumColumn(table, colunmName, nullable, readEnumValues(new SqlEnumColumn(table, colunmName, nullable, Collections.emptySet())));
+            } else if (isSetColumn(colunmName, jdbcType, typeName)) {
+                return new SqlSetColumn(table, colunmName, nullable, readSetValues(new SqlSetColumn(table, colunmName, nullable, Collections.emptySet())));
+            } else if (isStringColumn(colunmName, jdbcType, typeName)) {
+                return new SqlStringColumn(table, colunmName, jdbcType, nullable, size.get());
+            }
+            switch (jdbcType) {
+                case BIT:
+                    return new SqlBitColumn(table, colunmName, nullable, size.get());
+                case BOOLEAN:
+                    return new SqlBooleanColumn(table, colunmName, nullable);
+                case DECIMAL:
+                    return new SqlDecimalColumn(table, colunmName, nullable, size.get(), rs.getInt("DECIMAL_DIGITS"));
+            }
+            return new SqlColumn(table,
+                    colunmName,
+                    jdbcType,
+                    nullable,
+                    autoIncrement);
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error reading SQL column information (%s)", ex.getMessage()), ex);
+        }
+    }
+
+    private String databaseName(Database database) {
+        return getDatabaseName(database);
+    }
 
 }

@@ -8,13 +8,15 @@ import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
-import me.legrange.sql.SqlModellerException;
 import me.legrange.sql.SqlModeller;
+import me.legrange.sql.SqlModellerException;
 import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
 
 import java.sql.Connection;
 import java.sql.JDBCType;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -37,9 +39,17 @@ public final class PostgresModeller extends SqlModeller {
     public void modifyColumn(Column current) throws SqlModellerException {
         if (current instanceof EnumColumn) {
             modifyEnumColumn((EnumColumn) current);
-        }
-        else {
+        } else {
             super.modifyColumn(current);
+        }
+    }
+
+    @Override
+    public void modifyIndex(Index index) throws SqlModellerException {
+        try (Connection con = con(); Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(makeModifyIndexQuery(index));
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error modifying index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -149,7 +159,7 @@ public final class PostgresModeller extends SqlModeller {
 
     @Override
     public String makeModifyIndexQuery(Index index) {
-       return  makeRemoveIndexQuery(index) + ";" + makeAddIndexQuery(index);
+        return makeRemoveIndexQuery(index) + ";" + makeAddIndexQuery(index);
     }
 
     @Override
@@ -163,12 +173,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected boolean supportsAlterIndex() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsSet() {
+    public boolean supportsSet() {
         return false;
     }
 
@@ -190,8 +195,7 @@ public final class PostgresModeller extends SqlModeller {
         StringBuilder buf = new StringBuilder();
         if (column instanceof EnumColumn) {
             buf.append(makeAddEnumTypeQuery((EnumColumn) column));
-        }
-        else if (column instanceof SetColumn) {
+        } else if (column instanceof SetColumn) {
             buf.append(makeAddSetTypeQuery((SetColumn) column));
         }
         buf.append(format("ALTER TABLE %s ADD COLUMN %s %s",
@@ -261,8 +265,7 @@ public final class PostgresModeller extends SqlModeller {
         String typeName;
         if (column instanceof EnumColumn) {
             typeName = "\"" + typeName(column) + "\"";
-        }
-        else if (column instanceof SetColumn) {
+        } else if (column instanceof SetColumn) {
             typeName = "\"" + typeName(column) + "\"";
         } else if (column instanceof StringColumn) {
             int length = ((StringColumn) column).getLength();
