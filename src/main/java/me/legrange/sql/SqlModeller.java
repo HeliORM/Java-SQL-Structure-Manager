@@ -335,6 +335,7 @@ public abstract class SqlModeller {
                 case CHAR:
                 case VARCHAR:
                 case LONGVARCHAR:
+                case DECIMAL:
                 case BIT:
                     size = Optional.of(rs.getInt("COLUMN_SIZE"));
                     break;
@@ -366,6 +367,8 @@ public abstract class SqlModeller {
                     return new SqlBitColumn(table, colunmName, nullable, size.get());
                 case BOOLEAN:
                     return new SqlBooleanColumn(table, colunmName, nullable);
+                case DECIMAL:
+                    return new SqlDecimalColumn(table, colunmName,nullable, size.get(), rs.getInt("DECIMAL_DIGITS"));
             }
             return new SqlColumn(table,
                     colunmName,

@@ -10,8 +10,8 @@ public final class SqlDecimalColumn extends SqlColumn implements DecimalColumn {
     private int precision;
     private int scale;
 
-    public SqlDecimalColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean autoIncrement, int precision, int scale) {
-        super(table, name, jdbcType, nullable, autoIncrement);
+    public SqlDecimalColumn(Table table, String name, boolean nullable,int precision, int scale) {
+        super(table, name, JDBCType.DECIMAL, nullable,false);
         this.precision = precision;
         this.scale = scale;
     }

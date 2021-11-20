@@ -178,21 +178,25 @@ public final class MysqlModeller extends SqlModeller {
             if (other instanceof BooleanColumn) {
                 return ((BitColumn) one).getBits() == 1;
             }
+            return false;
         } else if (one instanceof BooleanColumn) {
             if (other instanceof BooleanColumn) {
                 return true;
             } else if (other instanceof BitColumn) {
                 return ((BitColumn) other).getBits() == 1;
             }
+            return false;
         } else if (one instanceof StringColumn) {
             if (other instanceof StringColumn) {
                 return actualTextLength((StringColumn) one) == actualTextLength((StringColumn) other);
             }
+            return false;
         } else if (one instanceof DecimalColumn) {
             if (other instanceof DecimalColumn) {
                 return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
                         && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
             }
+            return false;
         }
         return one.getJdbcType() == other.getJdbcType();
     }

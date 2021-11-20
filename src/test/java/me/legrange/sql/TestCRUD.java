@@ -51,7 +51,7 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
-    @Order(22)
+    @Order(29)
     public void renameColumn() throws SqlModellerException {
         Column fullName = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, 42);
         modeller.renameColumn(table.getColumn("name"), fullName);
