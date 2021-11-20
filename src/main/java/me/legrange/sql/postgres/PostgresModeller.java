@@ -54,6 +54,11 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
+    public boolean supportsSet() {
+        return false;
+    }
+
+    @Override
     protected boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
         return jdbcType == JDBCType.VARCHAR && typeName.endsWith("_" + columnName);
     }
@@ -105,12 +110,10 @@ public final class PostgresModeller extends SqlModeller {
         return null;
     }
 
-
     @Override
     protected Set<String> extractSetValues(String string) {
         return null;
     }
-
 
     @Override
     public String makeModifyColumnQuery(Column column) {
@@ -130,17 +133,17 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public String getDatabaseName(Database database) {
+    protected String getDatabaseName(Database database) {
         return format("\"%s\"", database.getName());
     }
 
     @Override
-    public String getTableName(Table table) {
+    protected String getTableName(Table table) {
         return format("\"%s\"", table.getName());
     }
 
     @Override
-    public String getCreateType(Column column) {
+    protected String getCreateType(Column column) {
         StringBuilder type = new StringBuilder();
         type.append(createBasicType(column));
         if (column.isKey()) {
@@ -153,28 +156,23 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public String makeRemoveIndexQuery(Index index) {
+    protected String makeRemoveIndexQuery(Index index) {
         return format("DROP INDEX IF EXISTS %s", getIndexName(index));
     }
 
     @Override
-    public String makeModifyIndexQuery(Index index) {
+    protected String makeModifyIndexQuery(Index index) {
         return makeRemoveIndexQuery(index) + ";" + makeAddIndexQuery(index);
     }
 
     @Override
-    public String getColumnName(Column column) {
+    protected String getColumnName(Column column) {
         return format("\"%s\"", column.getName());
     }
 
     @Override
-    public String getIndexName(Index index) {
+    protected String getIndexName(Index index) {
         return format("\"%s\"", index.getName());
-    }
-
-    @Override
-    public boolean supportsSet() {
-        return false;
     }
 
     @Override
@@ -183,7 +181,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public Set<String> extractEnumValues(String text) {
+    protected Set<String> extractEnumValues(String text) {
         return Arrays.stream(text.replace("{", "").replace("}", "")
                         .split(","))
                 .map(val -> val.substring(1, val.length() - 1))
@@ -191,7 +189,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public String makeAddColumnQuery(Column column) {
+    protected String makeAddColumnQuery(Column column) {
         StringBuilder buf = new StringBuilder();
         if (column instanceof EnumColumn) {
             buf.append(makeAddEnumTypeQuery((EnumColumn) column));
@@ -352,6 +350,5 @@ public final class PostgresModeller extends SqlModeller {
                 getIndexName(current),
                 getIndexName(changed));
     }
-
 
 }

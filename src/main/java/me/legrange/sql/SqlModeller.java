@@ -384,7 +384,6 @@ public abstract class SqlModeller {
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
-
     protected String makeRenameColumnQuery(Column column, Column changed) {
         return format("ALTER TABLE %s RENAME COLUMN %s TO %s",
                 getTableName(column.getTable()),

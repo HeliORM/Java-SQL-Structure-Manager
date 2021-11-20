@@ -22,7 +22,9 @@ jobs:
         java-version: '11'
         distribution: 'adopt'
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn -B compile --file pom.xml
     - name: Test MySQL
       run: export TEST_DB=mysql && mvn -B test --file pom.xml
+    - name: Test Postgres
+      run: export TEST_DB=postgres && mvn -B test --file pom.xml
 
