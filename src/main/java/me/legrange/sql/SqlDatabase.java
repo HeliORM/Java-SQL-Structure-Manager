@@ -3,6 +3,9 @@ package me.legrange.sql;
 import java.util.HashSet;
 import java.util.Set;
 
+/** Implementation of Database that is populated by reading from SQL
+ *
+ */
 final class SqlDatabase implements Database {
 
     private final String name;

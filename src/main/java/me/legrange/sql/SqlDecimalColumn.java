@@ -2,6 +2,9 @@ package me.legrange.sql;
 
 import java.sql.JDBCType;
 
+/** Implementation of decimal column that is populated by reading from SQL
+ *
+ */
 public final class SqlDecimalColumn extends SqlColumn implements DecimalColumn {
 
     private int precision;

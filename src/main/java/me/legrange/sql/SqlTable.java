@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+
+/** Implementation of Table  that is populated by reading from SQL */
 final class SqlTable implements Table {
 
     private final Database database;

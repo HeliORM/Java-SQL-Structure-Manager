@@ -2,6 +2,9 @@ package me.legrange.sql;
 
 import java.sql.JDBCType;
 
+/** Implementation of bit column that is populated by reading from SQL
+ *
+ */
 final class SqlBitColumn extends SqlColumn implements BitColumn {
 
     private int bits;

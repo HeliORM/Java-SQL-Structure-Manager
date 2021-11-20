@@ -5,6 +5,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/** Implementation of Index that is populated by reading from SQL
+ *
+ */
 final class SqlIndex implements Index {
 
     private final Table table;

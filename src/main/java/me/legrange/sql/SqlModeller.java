@@ -55,9 +55,9 @@ public abstract class SqlModeller {
      *
      * @param name The name of the database to read
      * @return The model
-     * @throws SqlManagerException Thrown if there is a problem reading the model
+     * @throws SqlModellerException Thrown if there is a problem reading the model
      */
-    public Database readDatabase(String name) throws SqlManagerException {
+    public Database readDatabase(String name) throws SqlModellerException {
         SqlDatabase database = new SqlDatabase(name);
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
@@ -67,7 +67,7 @@ public abstract class SqlModeller {
                 }
             }
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error scanning database '%s' (%s)", name, ex.getMessage()));
+            throw new SqlModellerException(format("Error scanning database '%s' (%s)", name, ex.getMessage()));
         }
         return database;
     }
@@ -78,9 +78,9 @@ public abstract class SqlModeller {
      * @param database The database for the table
      * @param name     The name of the table
      * @return The table model
-     * @throws SqlManagerException Thrown if there is a problem reading the model
+     * @throws SqlModellerException Thrown if there is a problem reading the model
      */
-    public Table readTable(Database database, String name) throws SqlManagerException {
+    public Table readTable(Database database, String name) throws SqlModellerException {
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
             SqlTable table = new SqlTable(database, name);
@@ -97,7 +97,7 @@ public abstract class SqlModeller {
                     SqlColumn column = sqlColumns.get(keys.getString("COLUMN_NAME"));
                     String pkName = keys.getString("PK_NAME");
                     if (column == null) {
-                        throw new SqlManagerException(format("Cannot find column '%s' in table '%s' yet it is a primary key", keys.getString("COLUMN_NAME"), table.getName()));
+                        throw new SqlModellerException(format("Cannot find column '%s' in table '%s' yet it is a primary key", keys.getString("COLUMN_NAME"), table.getName()));
                     }
                     keyNames.add(pkName);
                     column.setKey(true);
@@ -129,7 +129,7 @@ public abstract class SqlModeller {
             }
             return table;
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error scanning table '%s' (%s)", name, ex.getMessage()));
+            throw new SqlModellerException(format("Error scanning table '%s' (%s)", name, ex.getMessage()));
         }
     }
 
@@ -138,9 +138,9 @@ public abstract class SqlModeller {
      *
      * @param table The table
      * @return Does it exist?
-     * @throws SqlManagerException Thrown if there is a problem
+     * @throws SqlModellerException Thrown if there is a problem
      */
-    public boolean tableExists(Table table) throws SqlManagerException {
+    public boolean tableExists(Table table) throws SqlModellerException {
         return tableExists(table.getDatabase(), table.getName());
     }
 
@@ -148,13 +148,13 @@ public abstract class SqlModeller {
      * Create a table based on a table model.
      *
      * @param table The table model
-     * @throws SqlManagerException Thrown if there is a problem creating the table
+     * @throws SqlModellerException Thrown if there is a problem creating the table
      */
-    public void createTable(Table table) throws SqlManagerException {
+    public void createTable(Table table) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeCreateTableQuery(table));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()));
         }
     }
 
@@ -162,13 +162,13 @@ public abstract class SqlModeller {
      * Delete a table from SQL
      *
      * @param table The table model
-     * @throws SqlManagerException Thrown if there is a problem deleting the table
+     * @throws SqlModellerException Thrown if there is a problem deleting the table
      */
-    public void deleteTable(Table table) throws SqlManagerException {
+    public void deleteTable(Table table) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeDeleteTableQuery(table));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()));
         }
     }
 
@@ -176,13 +176,13 @@ public abstract class SqlModeller {
      * Add a column to a table.
      *
      * @param column The column to add
-     * @throws SqlManagerException Thrown if there is a problem adding the column
+     * @throws SqlModellerException Thrown if there is a problem adding the column
      */
-    public void addColumn(Column column) throws SqlManagerException {
+    public void addColumn(Column column) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddColumnQuery(column));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -191,13 +191,13 @@ public abstract class SqlModeller {
      *
      * @param current The current column
      * @param changed The changed column
-     * @throws SqlManagerException Thrown if there is a problem reaming the column
+     * @throws SqlModellerException Thrown if there is a problem reaming the column
      */
-    public void renameColumn(Column current, Column changed) throws SqlManagerException {
+    public void renameColumn(Column current, Column changed) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -206,13 +206,13 @@ public abstract class SqlModeller {
      * Delete a column from SQL
      *
      * @param column The column to delete
-     * @throws SqlManagerException Thrown if there is a problem deleting the column
+     * @throws SqlModellerException Thrown if there is a problem deleting the column
      */
-    public void deleteColumn(Column column) throws SqlManagerException {
+    public void deleteColumn(Column column) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeDeleteColumnQuery(column));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -221,13 +221,13 @@ public abstract class SqlModeller {
      * Modify a column in SQL.
      *
      * @param current The current column
-     * @throws SqlManagerException Thrown if there is a problem modifying the model
+     * @throws SqlModellerException Thrown if there is a problem modifying the model
      */
-    public void modifyColumn(Column current) throws SqlManagerException {
+    public void modifyColumn(Column current) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -236,13 +236,13 @@ public abstract class SqlModeller {
      * Add an index to a SQL table.
      *
      * @param index The index to add
-     * @throws SqlManagerException
+     * @throws SqlModellerException
      */
-    public void addIndex(Index index) throws SqlManagerException {
+    public void addIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddIndexQuery(index));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -251,13 +251,13 @@ public abstract class SqlModeller {
      *
      * @param current The index to modify
      * @param changed The changed index
-     * @throws SqlManagerException
+     * @throws SqlModellerException
      */
-    public void renameIndex(Index current, Index changed) throws SqlManagerException {
+    public void renameIndex(Index current, Index changed) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameIndexQuery(current, changed));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
 
     }
@@ -266,9 +266,9 @@ public abstract class SqlModeller {
      * Modify an index on a SQL table
      *
      * @param index The index to modify
-     * @throws SqlManagerException
+     * @throws SqlModellerException
      */
-    public void modifyIndex(Index index) throws SqlManagerException {
+    public void modifyIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             if (supportsAlterIndex()) {
                 stmt.executeUpdate(makeModifyIndexQuery(index));
@@ -277,7 +277,7 @@ public abstract class SqlModeller {
                 addIndex(index);
             }
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error modifying index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error modifying index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -289,13 +289,13 @@ public abstract class SqlModeller {
      * Remove an index from a SQL table.
      *
      * @param index The index to remove
-     * @throws SqlManagerException
+     * @throws SqlModellerException
      */
-    public void removeIndex(Index index) throws SqlManagerException {
+    public void removeIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRemoveIndexQuery(index));
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error removing index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error removing index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
         }
     }
 
@@ -306,16 +306,16 @@ public abstract class SqlModeller {
      * @param db        The database
      * @param tableName The table name
      * @return Does it exist?
-     * @throws SqlManagerException Thrown if there is a problem
+     * @throws SqlModellerException Thrown if there is a problem
      */
-    private boolean tableExists(Database db, String tableName) throws SqlManagerException {
+    private boolean tableExists(Database db, String tableName) throws SqlModellerException {
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
             try (ResultSet tables = dbm.getTables(databaseName(db), null, tableName, null)) {
                 return tables.next();
             }
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error checking table '%s' (%s)", tableName, ex.getMessage()));
+            throw new SqlModellerException(format("Error checking table '%s' (%s)", tableName, ex.getMessage()));
         }
     }
 
@@ -325,9 +325,9 @@ public abstract class SqlModeller {
      * @param table The table for the column
      * @param rs    The result set
      * @return The column mode
-     * @throws SqlManagerException
+     * @throws SqlModellerException
      */
-    private SqlColumn getColumnFromResultSet(Table table, ResultSet rs) throws SqlManagerException {
+    private SqlColumn getColumnFromResultSet(Table table, ResultSet rs) throws SqlModellerException {
         try {
             JDBCType jdbcType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
             Optional<Integer> size;
@@ -373,7 +373,7 @@ public abstract class SqlModeller {
                     nullable,
                     autoIncrement);
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error reading SQL column information (%s)", ex.getMessage()), ex);
+            throw new SqlModellerException(format("Error reading SQL column information (%s)", ex.getMessage()), ex);
         }
     }
 
@@ -387,7 +387,7 @@ public abstract class SqlModeller {
     protected abstract String makeReadEnumQuery(EnumColumn column);
 
 
-    protected final Set<String> readEnumValues(EnumColumn column) throws SqlManagerException {
+    protected final Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
         String query = makeReadEnumQuery(column);
         try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
             if (ers.next()) {
@@ -395,7 +395,7 @@ public abstract class SqlModeller {
             }
             return Collections.EMPTY_SET;
         } catch (SQLException ex) {
-            throw new SqlManagerException(format("Error reading enum values from %s.%s.%s (%s)",
+            throw new SqlModellerException(format("Error reading enum values from %s.%s.%s (%s)",
                     column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName(), ex.getMessage()), ex);
         }
     }

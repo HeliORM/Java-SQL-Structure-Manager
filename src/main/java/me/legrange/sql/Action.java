@@ -2,9 +2,8 @@ package me.legrange.sql;
 
 import static java.lang.String.format;
 
-/** An action taken by the verifier to bring a database into sync with what is expected by the database model.
- *
- */
+/** An action taken by the verifier to bring a database into sync with what is expected by the database model. This can
+ * be used to tell the user what was done to the database */
 public final class Action {
 
     public enum Type {

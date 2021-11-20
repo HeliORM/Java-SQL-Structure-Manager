@@ -4,6 +4,10 @@ import java.sql.JDBCType;
 import java.util.Optional;
 import java.util.Set;
 
+
+/** Implementation of a column that is populated by reading from SQL
+ *
+ */
 class SqlColumn implements Column {
 
     private final Table table;

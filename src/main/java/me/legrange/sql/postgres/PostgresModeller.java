@@ -8,7 +8,7 @@ import me.legrange.sql.DecimalColumn;
 import me.legrange.sql.EnumColumn;
 import me.legrange.sql.Index;
 import me.legrange.sql.SetColumn;
-import me.legrange.sql.SqlManagerException;
+import me.legrange.sql.SqlModellerException;
 import me.legrange.sql.SqlModeller;
 import me.legrange.sql.StringColumn;
 import me.legrange.sql.Table;
@@ -34,7 +34,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public void modifyColumn(Column current) throws SqlManagerException {
+    public void modifyColumn(Column current) throws SqlModellerException {
         if (current instanceof EnumColumn) {
             modifyEnumColumn((EnumColumn) current);
         }
@@ -201,7 +201,7 @@ public final class PostgresModeller extends SqlModeller {
         return buf.toString();
     }
 
-    private void modifyEnumColumn(EnumColumn column) throws SqlManagerException {
+    private void modifyEnumColumn(EnumColumn column) throws SqlModellerException {
         Set<String> want = column.getEnumValues();
         Set<String> have = readEnumValues(column);
         if (!want.equals(have)) {

@@ -24,7 +24,7 @@ public final class SqlVerifier {
         this.deleteMissingColumns = delete;
     }
 
-    public List<Action> verifyTable(Table table) throws SqlManagerException {
+    public List<Action> verifyTable(Table table) throws SqlModellerException {
         if (!modeller.tableExists(table)) {
             modeller.createTable(table);
             return Collections.singletonList(Action.createTable(table));
@@ -33,14 +33,14 @@ public final class SqlVerifier {
         }
     }
 
-    private List<Action> verifyStructure(Table table) throws SqlManagerException {
+    private List<Action> verifyStructure(Table table) throws SqlModellerException {
         List<Action> actions = new ArrayList<>();
         actions.addAll(verifyColumns(table));
         actions.addAll(verifyIndexes(table));
         return actions;
     }
 
-    private List<Action> verifyColumns(Table table) throws SqlManagerException {
+    private List<Action> verifyColumns(Table table) throws SqlModellerException {
         Table sqlTable = modeller.readTable(table.getDatabase(), table.getName());
         Map<String, Column> tableColumns = table.getColumns().stream()
                 .collect(Collectors.toMap(col -> col.getName(), col -> col));
@@ -72,7 +72,7 @@ public final class SqlVerifier {
         return actions;
     }
 
-    private List<Action> verifyIndexes(Table table) throws SqlManagerException {
+    private List<Action> verifyIndexes(Table table) throws SqlModellerException {
         Table sqlTable = modeller.readTable(table.getDatabase(), table.getName());
         Map<String, Index> tableIndexes = table.getIndexes().stream()
                 .collect(Collectors.toMap(col -> col.getName(), col -> col));

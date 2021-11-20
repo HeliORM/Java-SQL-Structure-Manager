@@ -1,10 +1,12 @@
 package me.legrange.sql;
 
 import java.sql.JDBCType;
-import java.util.Optional;
 import java.util.Set;
 
-public class SqlEnumColumn extends SqlColumn implements EnumColumn{
+/** Implementation of enum column that is populated by reading from SQL
+ *
+ */
+class SqlEnumColumn extends SqlColumn implements EnumColumn{
 
     private final Set<String> enumValues;
 

@@ -1,15 +1,16 @@
 package me.legrange.sql;
 
 import java.sql.JDBCType;
-import java.util.Optional;
 import java.util.Set;
 
- class SqlSetColumn extends SqlColumn implements SetColumn{
+
+/** Implementation of a set that is populated by reading from SQL */
+class SqlSetColumn extends SqlColumn implements SetColumn {
 
     private final Set<String> setValues;
 
     SqlSetColumn(Table table, String name, boolean nullable, Set<String> setValues) {
-        super(table, name, JDBCType.OTHER,  nullable, false);
+        super(table, name, JDBCType.OTHER, nullable, false);
         this.setValues = setValues;
     }
 
