@@ -322,6 +322,9 @@ public final class PostgresModeller extends SqlModeller {
                         typeName = "BIGINT";
                     }
                     break;
+                case DOUBLE:
+                    typeName = "DOUBLE PRECISION";
+                    break;
                 default:
                     typeName = column.getJdbcType().getName();
             }

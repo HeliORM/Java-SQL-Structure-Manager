@@ -45,6 +45,16 @@ public class TestCRUD extends AbstractSqlTest {
 
     @Test
     @Order(21)
+    public void addDoubleColumn() throws SqlModellerException {
+        TestColumn income = new TestColumn(table, "income", JDBCType.DOUBLE);
+        table.addColumn(income);
+        modeller.addColumn(income);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(22)
     public void addBooleanColumn() throws SqlModellerException {
         TestColumn sex = new TestBooleanColumn(table, "sex");
         table.addColumn(sex);
