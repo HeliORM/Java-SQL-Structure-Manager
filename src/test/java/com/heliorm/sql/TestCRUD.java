@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
@@ -130,36 +131,45 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(61)
     public void addSetColumn() throws SqlModellerException {
+        TestColumn col = new TestSetColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
         if (modeller.supportsSet()) {
-            TestColumn col = new TestSetColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
             table.addColumn(col);
             modeller.addColumn(col);
             Table loaded = modeller.readTable(db, "Person");
             assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        }
+        else {
+            assertThrows(SqlModellerException.class, () -> modeller.addColumn(col), "Adding set column must fail");
         }
     }
 
     @Test
     @Order(62)
     public void addSetValue() throws SqlModellerException {
+        TestColumn col = new TestSetColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "2ND BREAKFAST", "LUNCH", "DINNER")));
         if (modeller.supportsSet()) {
-            TestColumn col = new TestSetColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "2ND BREAKFAST", "LUNCH", "DINNER")));
             table.addColumn(col);
             modeller.modifyColumn(col);
             Table loaded = modeller.readTable(db, "Person");
             assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        }
+        else {
+            assertThrows(SqlModellerException.class, () -> modeller.modifyColumn(col), "Modifying set column must fail");
         }
     }
 
     @Test
     @Order(63)
     public void removeSetValue() throws SqlModellerException {
+        TestColumn col = new TestEnumColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
         if (modeller.supportsSet()) {
-            TestColumn col = new TestEnumColumn(table, "selection", true, new HashSet<>(Arrays.asList("BREAKFAST", "LUNCH", "DINNER")));
             table.addColumn(col);
             modeller.modifyColumn(col);
             Table loaded = modeller.readTable(db, "Person");
             assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+        }
+        else {
+            assertThrows(SqlModellerException.class, () -> modeller.modifyColumn(col), "Modifying set column must fail");
         }
     }
 
