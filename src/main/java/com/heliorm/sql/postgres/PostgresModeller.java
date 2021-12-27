@@ -203,6 +203,23 @@ public final class PostgresModeller extends SqlModeller {
         return buf.toString();
     }
 
+    @Override
+    protected String makeCreateTableQuery(Table table) {
+        StringBuilder head = new StringBuilder();
+        StringJoiner body = new StringJoiner(",");
+        for (Column column : table.getColumns()) {
+            if (column instanceof EnumColumn) {
+                head.append(makeAddEnumTypeQuery((EnumColumn) column));
+            }
+            body.add(format("%s %s", getColumnName(column), getCreateType(column)));
+        }
+        StringBuilder sql = new StringBuilder(head.toString());
+        sql.append(format("CREATE TABLE %s (", getTableName(table)));
+        sql.append(body);
+        sql.append(")");
+        return sql.toString();
+    }
+
     private void modifyEnumColumn(EnumColumn column) throws SqlModellerException {
         Set<String> want = column.getEnumValues();
         Set<String> have = readEnumValues(column);

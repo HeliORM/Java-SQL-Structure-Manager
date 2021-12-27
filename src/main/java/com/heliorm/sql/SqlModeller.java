@@ -372,6 +372,7 @@ public abstract class SqlModeller {
     }
 
     protected String makeCreateTableQuery(Table table) {
+        StringJoiner head = new StringJoiner(";");
         StringJoiner body = new StringJoiner(",");
         for (Column column : table.getColumns()) {
             body.add(format("%s %s", getColumnName(column), getCreateType(column)));
