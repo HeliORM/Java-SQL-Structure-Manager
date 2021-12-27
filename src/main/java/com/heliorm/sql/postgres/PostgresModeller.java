@@ -204,12 +204,15 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected String makeCreateTableQuery(Table table) {
+    protected String makeCreateTableQuery(Table table) throws SqlModellerException {
         StringBuilder head = new StringBuilder();
         StringJoiner body = new StringJoiner(",");
         for (Column column : table.getColumns()) {
             if (column instanceof EnumColumn) {
                 head.append(makeAddEnumTypeQuery((EnumColumn) column));
+            }
+            if (column instanceof SetColumn) {
+                throw new SqlModellerException(format("SET data types are not supported for Postgres"));
             }
             body.add(format("%s %s", getColumnName(column), getCreateType(column)));
         }
