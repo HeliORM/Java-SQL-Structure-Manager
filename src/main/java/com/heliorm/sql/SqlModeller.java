@@ -20,35 +20,33 @@ import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
+/**
+ * A modeller allows us to model SQL database structures into Java structures and modify SQL database structures.
+ * This class must be extended to provide support for specific database types.
+ */
 public abstract class SqlModeller {
 
+    /**
+     * Create a modeller for MySQL/MariaDB databases.
+     *
+     * @param supplier A supplier of SQL connections.
+     * @return The modeller
+     */
     public static SqlModeller mysql(Supplier<Connection> supplier) {
         return new MysqlModeller(supplier);
     }
 
+    /**
+     * Create a modeller for PostgreSQL databases.
+     *
+     * @param supplier A supplier of SQL connections.
+     * @return The modeller
+     */
     public static SqlModeller postgres(Supplier<Connection> supplier) {
         return new PostgresModeller(supplier);
     }
 
     private final Supplier<Connection> supplier;
-
-    /**
-     * Create a new modeller with the given connection supplier and driver.
-     *
-     * @param supplier The connection supplier
-     */
-    protected SqlModeller(Supplier<Connection> supplier) {
-        this.supplier = supplier;
-    }
-
-    /**
-     * Compare two columns by their typing. Returns true if they are essentially the same.
-     *
-     * @param one   One column
-     * @param other The other column
-     * @return True if the same
-     */
-    protected abstract boolean typesAreCompatible(Column one, Column other);
 
     /**
      * Read a database from SQL and return a model for it.
@@ -143,7 +141,7 @@ public abstract class SqlModeller {
     public final boolean tableExists(Table table) throws SqlModellerException {
         try (Connection con = con()) {
             DatabaseMetaData dbm = con.getMetaData();
-            try (ResultSet tables = dbm.getTables(databaseName(table.getDatabase()), null, table.getName(), null)) {
+            try (ResultSet tables = dbm.getTables(getDatabaseName(table.getDatabase()), null, table.getName(), null)) {
                 return tables.next();
             }
         } catch (SQLException ex) {
@@ -208,7 +206,6 @@ public abstract class SqlModeller {
         }
     }
 
-
     /**
      * Delete a column from SQL
      *
@@ -223,7 +220,6 @@ public abstract class SqlModeller {
         }
     }
 
-
     /**
      * Modify a column in SQL.
      *
@@ -237,7 +233,6 @@ public abstract class SqlModeller {
             throw new SqlModellerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
         }
     }
-
 
     /**
      * Add an index to a SQL table.
@@ -297,6 +292,31 @@ public abstract class SqlModeller {
         }
     }
 
+    /**
+     * Create a new modeller with the given connection supplier and driver.
+     *
+     * @param supplier The connection supplier
+     */
+    protected SqlModeller(Supplier<Connection> supplier) {
+        this.supplier = supplier;
+    }
+
+    /**
+     * Compare two columns by their typing. Returns true if they are essentially the same. Must be provided
+     * by a database specific implementation.
+     *
+     * @param one   One column
+     * @param other The other column
+     * @return True if the same
+     */
+    protected abstract boolean typesAreCompatible(Column one, Column other);
+
+    /**
+     * Extract the allowed values of a Set type.
+     *
+     * @param string The string from the database.
+     * @return The set of strings.
+     */
     protected abstract Set<String> extractSetValues(String string);
 
     protected abstract boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName);
@@ -325,8 +345,7 @@ public abstract class SqlModeller {
                 return extractSetValues(ers.getString(1));
             }
             return Collections.EMPTY_SET;
-        }
-        catch (SQLException ex) {
+        } catch (SQLException ex) {
             throw new SqlModellerException(format("Error reading set values from %s.%s.%s (%s)",
                     column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName(), ex.getMessage()), ex);
         }
@@ -374,48 +393,27 @@ public abstract class SqlModeller {
         return format("DROP TABLE %s", getTableName(table));
     }
 
-    protected String makeModifyIndexQuery(Index index) {
-        return format("ALTER %sINDEX %s ON %s %s",
-                index.isUnique() ? "UNIQUE " : "",
-                getIndexName(index),
-                getTableName(index.getTable()),
-                index.getColumns().stream()
-                        .map(this::getColumnName)
-                        .reduce((c1, c2) -> c1 + "," + c2).get());
-    }
+    protected abstract String makeModifyIndexQuery(Index index);
 
-    protected String makeRenameColumnQuery(Column column, Column changed) {
+    private String makeRenameColumnQuery(Column column, Column changed) {
         return format("ALTER TABLE %s RENAME COLUMN %s TO %s",
                 getTableName(column.getTable()),
                 getColumnName(column),
                 getColumnName(changed));
     }
 
-
-    protected String makeDeleteColumnQuery(Column column) {
+    private String makeDeleteColumnQuery(Column column) {
         return format("ALTER TABLE %s DROP COLUMN %s",
                 getTableName(column.getTable()),
                 getColumnName(column));
     }
 
 
-    protected String makeModifyColumnQuery(Column column) {
-        return format("ALTER TABLE %s MODIFY COLUMN %s %s",
-                getTableName(column.getTable()),
-                getColumnName(column),
-                getCreateType(column));
-    }
+    protected abstract String makeModifyColumnQuery(Column column) ;
 
+    protected abstract String makeAddColumnQuery(Column column);
 
-    protected String makeAddColumnQuery(Column column) {
-        return format("ALTER TABLE %s ADD COLUMN %s %s",
-                getTableName(column.getTable()),
-                getColumnName(column),
-                getCreateType(column));
-    }
-
-
-    protected String makeAddIndexQuery(Index index) {
+    protected final String makeAddIndexQuery(Index index) {
         return format("CREATE %sINDEX %s on %s (%s)",
                 index.isUnique() ? "UNIQUE " : "",
                 getIndexName(index),
@@ -425,15 +423,11 @@ public abstract class SqlModeller {
                         .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
-    protected String makeRemoveIndexQuery(Index index) {
-        return format("DROP INDEX %s on %s",
-                getIndexName(index),
-                getTableName(index.getTable()));
-    }
+    protected abstract String makeRemoveIndexQuery(Index index);
 
     protected abstract String getIndexName(Index index);
 
-    protected boolean isStringColumn(String colunmName, JDBCType jdbcType, String typeName) {
+    private boolean isStringColumn(JDBCType jdbcType) {
         switch (jdbcType) {
             case CHAR:
             case VARCHAR:
@@ -479,7 +473,7 @@ public abstract class SqlModeller {
                 return new SqlEnumColumn(table, colunmName, nullable, readEnumValues(new SqlEnumColumn(table, colunmName, nullable, Collections.emptySet())));
             } else if (isSetColumn(colunmName, jdbcType, typeName)) {
                 return new SqlSetColumn(table, colunmName, nullable, readSetValues(new SqlSetColumn(table, colunmName, nullable, Collections.emptySet())));
-            } else if (isStringColumn(colunmName, jdbcType, typeName)) {
+            } else if (isStringColumn(jdbcType)) {
                 return new SqlStringColumn(table, colunmName, jdbcType, nullable, size.get());
             }
             switch (jdbcType) {
@@ -498,10 +492,6 @@ public abstract class SqlModeller {
         } catch (SQLException ex) {
             throw new SqlModellerException(format("Error reading SQL column information (%s)", ex.getMessage()), ex);
         }
-    }
-
-    private String databaseName(Database database) {
-        return getDatabaseName(database);
     }
 
 }

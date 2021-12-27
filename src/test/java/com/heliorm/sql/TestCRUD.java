@@ -7,6 +7,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,6 +22,7 @@ public class TestCRUD extends AbstractSqlTest {
         table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, false, true, true));
         table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR, 42));
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
+        table.addColumn(new TestEnumColumn(table, "direction", true, new HashSet<>(Arrays.asList("NORTH", "SOUTH", "EAST", "WEST"))));
         if (modeller.tableExists(table)) {
             say("Removing table %s", table.getName());
             modeller.deleteTable(table);

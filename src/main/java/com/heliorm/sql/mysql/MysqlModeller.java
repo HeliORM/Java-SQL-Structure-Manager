@@ -54,7 +54,6 @@ public final class MysqlModeller extends SqlModeller {
         return typeName.equals("ENUM");
     }
 
-
     @Override
     protected String getDatabaseName(Database database) {
         return format("`%s`", database.getName());
@@ -161,6 +160,37 @@ public final class MysqlModeller extends SqlModeller {
                         .split(","))
                 .map(val -> val.substring(1, val.length() - 1))
                 .collect(Collectors.toSet());
+    }
+
+    protected String makeModifyColumnQuery(Column column) {
+        return format("ALTER TABLE %s MODIFY COLUMN %s %s",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getCreateType(column));
+    }
+
+
+    protected String makeAddColumnQuery(Column column) {
+        return format("ALTER TABLE %s ADD COLUMN %s %s",
+                getTableName(column.getTable()),
+                getColumnName(column),
+                getCreateType(column));
+    }
+
+    protected String makeRemoveIndexQuery(Index index) {
+        return format("DROP INDEX %s on %s",
+                getIndexName(index),
+                getTableName(index.getTable()));
+    }
+
+    protected String makeModifyIndexQuery(Index index) {
+        return format("ALTER %sINDEX %s ON %s %s",
+                index.isUnique() ? "UNIQUE " : "",
+                getIndexName(index),
+                getTableName(index.getTable()),
+                index.getColumns().stream()
+                        .map(this::getColumnName)
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
     @Override
