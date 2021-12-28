@@ -29,7 +29,7 @@ public class TestCRUD extends AbstractSqlTest {
             say("Removing table %s", table.getName());
             modeller.deleteTable(table);
         }
-        TestIndex index = new TestIndex(table, "startIdx", false);
+        TestIndex index = new TestIndex(table, makeUnique(8), false);
         index.addColumn(table.getColumn("name"));
         table.addIndex(index);
         modeller.createTable(table);
