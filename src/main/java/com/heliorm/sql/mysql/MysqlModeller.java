@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,31 @@ public final class MysqlModeller extends SqlModeller {
      */
     public MysqlModeller(Supplier<Connection> supplier) {
         super(supplier);
+    }
+
+    @Override
+    protected String makeCreateTableQuery(Table table) throws SqlModellerException {
+        StringJoiner body = new StringJoiner(",");
+        for (Column column : table.getColumns()) {
+            body.add(format("%s %s", getColumnName(column), getCreateType(column)));
+        }
+        for (Index index : table.getIndexes()) {
+            body.add(makeCreateIndex(index));
+        }
+        StringBuilder sql = new StringBuilder();
+        sql.append(format("CREATE TABLE %s (", getTableName(table)));
+        sql.append(body);
+        sql.append(")");
+        return sql.toString();
+    }
+
+    private String makeCreateIndex(Index index) {
+        return format("%sKEY %s (%s)",
+                index.isUnique() ? "UNIQUE " : "",
+                getIndexName(index),
+                index.getColumns().stream()
+                        .map(this::getColumnName)
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
     @Override

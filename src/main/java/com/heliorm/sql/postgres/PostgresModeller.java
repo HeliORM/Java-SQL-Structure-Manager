@@ -220,6 +220,10 @@ public final class PostgresModeller extends SqlModeller {
         sql.append(format("CREATE TABLE %s (", getTableName(table)));
         sql.append(body);
         sql.append(")");
+        for (Index index : table.getIndexes()) {
+            sql.append(";\n");
+            sql.append(makeAddIndexQuery(index));
+        }
         return sql.toString();
     }
 

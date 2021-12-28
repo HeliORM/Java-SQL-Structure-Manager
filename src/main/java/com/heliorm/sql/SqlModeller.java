@@ -48,6 +48,10 @@ public abstract class SqlModeller {
 
     private final Supplier<Connection> supplier;
 
+    public final String generateSchema(Table table) throws SqlModellerException {
+       return makeCreateTableQuery(table);
+    }
+
     /**
      * Read a database from SQL and return a model for it.
      *
@@ -371,17 +375,7 @@ public abstract class SqlModeller {
         return 255;
     }
 
-    protected String makeCreateTableQuery(Table table) throws SqlModellerException {
-        StringJoiner body = new StringJoiner(",");
-        for (Column column : table.getColumns()) {
-            body.add(format("%s %s", getColumnName(column), getCreateType(column)));
-        }
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("CREATE TABLE %s (", getTableName(table)));
-        sql.append(body);
-        sql.append(")");
-        return sql.toString();
-    }
+    protected abstract String makeCreateTableQuery(Table table) throws SqlModellerException;
 
     protected abstract String getColumnName(Column column);
 

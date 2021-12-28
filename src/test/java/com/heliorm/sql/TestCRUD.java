@@ -17,9 +17,30 @@ import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 @TestMethodOrder(OrderAnnotation.class)
 public class TestCRUD extends AbstractSqlTest {
 
+
     @Test
     @Order(10)
+    public void createTableWithIndex() throws SqlModellerException {
+        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, false, true, true));
+        table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR, 42));
+        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
+        table.addColumn(new TestEnumColumn(table, "direction", true, new HashSet<>(Arrays.asList("NORTH", "SOUTH", "EAST", "WEST"))));
+        if (modeller.tableExists(table)) {
+            say("Removing table %s", table.getName());
+            modeller.deleteTable(table);
+        }
+        TestIndex index = new TestIndex(table, "startIdx", false);
+        index.addColumn(table.getColumn("name"));
+        table.addIndex(index);
+        modeller.createTable(table);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we created must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(11)
     public void createTable() throws SqlModellerException {
+        table = new TestTable(db, "Person");
         table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, false, true, true));
         table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR, 42));
         table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
@@ -32,6 +53,7 @@ public class TestCRUD extends AbstractSqlTest {
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we created must be the same as the one loaded");
     }
+
 
     @Test
     @Order(20)
@@ -147,8 +169,7 @@ public class TestCRUD extends AbstractSqlTest {
             modeller.addColumn(col);
             Table loaded = modeller.readTable(db, "Person");
             assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
-        }
-        else {
+        } else {
             assertThrows(SqlModellerException.class, () -> modeller.addColumn(col), "Adding set column must fail");
         }
     }
@@ -162,8 +183,7 @@ public class TestCRUD extends AbstractSqlTest {
             modeller.modifyColumn(col);
             Table loaded = modeller.readTable(db, "Person");
             assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
-        }
-        else {
+        } else {
             assertThrows(SqlModellerException.class, () -> modeller.modifyColumn(col), "Modifying set column must fail");
         }
     }
@@ -177,8 +197,7 @@ public class TestCRUD extends AbstractSqlTest {
             modeller.modifyColumn(col);
             Table loaded = modeller.readTable(db, "Person");
             assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
-        }
-        else {
+        } else {
             assertThrows(SqlModellerException.class, () -> modeller.modifyColumn(col), "Modifying set column must fail");
         }
     }
