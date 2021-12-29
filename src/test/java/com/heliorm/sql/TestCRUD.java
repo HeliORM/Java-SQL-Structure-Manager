@@ -21,9 +21,9 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(10)
     public void createTableWithIndex() throws SqlModellerException {
-        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, false, true, true));
+        table.addColumn(new TestIntegerColumn(table, "id", JDBCType.INTEGER, false, true, true));
         table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR, 42));
-        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
+        table.addColumn(new TestIntegerColumn(table, "age", JDBCType.SMALLINT));
         table.addColumn(new TestEnumColumn(table, "direction", true, new HashSet<>(Arrays.asList("NORTH", "SOUTH", "EAST", "WEST"))));
         if (modeller.tableExists(table)) {
             say("Removing table %s", table.getName());
@@ -41,9 +41,9 @@ public class TestCRUD extends AbstractSqlTest {
     @Order(11)
     public void createTable() throws SqlModellerException {
         table = new TestTable(db, "Person");
-        table.addColumn(new TestColumn(table, "id", JDBCType.INTEGER, false, true, true));
+        table.addColumn(new TestIntegerColumn(table, "id", JDBCType.INTEGER, false, true, true));
         table.addColumn(new TestStringColumn(table, "name", JDBCType.VARCHAR, 42));
-        table.addColumn(new TestColumn(table, "age", JDBCType.SMALLINT));
+        table.addColumn(new TestIntegerColumn(table, "age", JDBCType.SMALLINT));
         table.addColumn(new TestEnumColumn(table, "direction", true, new HashSet<>(Arrays.asList("NORTH", "SOUTH", "EAST", "WEST"))));
         if (modeller.tableExists(table)) {
             say("Removing table %s", table.getName());
@@ -68,7 +68,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(21)
     public void addDoubleColumn() throws SqlModellerException {
-        TestColumn income = new TestColumn(table, "income", JDBCType.DOUBLE);
+        TestColumn income = new TestDecimalColumn(table, "income", JDBCType.DOUBLE);
         table.addColumn(income);
         modeller.addColumn(income);
         Table loaded = modeller.readTable(db, "Person");
@@ -228,7 +228,7 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(90)
     public void modifyColumnTypeSmallIntBigInt() throws SqlModellerException {
-        TestColumn age = new TestColumn(table, "age", JDBCType.BIGINT, false, false, false);
+        TestColumn age = new TestIntegerColumn(table, "age", JDBCType.BIGINT, false, false, false);
         table.addColumn(age);
         Table loaded = modeller.readTable(db, "Person");
         assertFalse(isSameTable(loaded, table), "Table we modified must not be the same as the one loaded");

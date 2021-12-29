@@ -6,7 +6,7 @@ import java.sql.JDBCType;
 /** Implementation of a column that is populated by reading from SQL
  *
  */
-class SqlColumn implements Column {
+abstract class SqlColumn implements Column {
 
     private final Table table;
     private final String name;

@@ -85,6 +85,11 @@ public final class PostgresModeller extends SqlModeller {
         }
         if (one instanceof DecimalColumn) {
             if (other instanceof DecimalColumn) {
+                if (one.getJdbcType() == JDBCType.DOUBLE) {
+                    if (other.getJdbcType() == JDBCType.DOUBLE) {
+                        return true;
+                    }
+                }
                 return ((DecimalColumn) one).getPrecision() == ((DecimalColumn) other).getPrecision()
                         && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
             }
@@ -116,7 +121,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public String makeModifyColumnQuery(Column column) {
+    public String makeModifyColumnQuery(Column column) throws SqlModellerException {
         StringBuilder sql = new StringBuilder();
         sql.append(format("ALTER TABLE %s", getTableName(column.getTable())));
         sql.append(format("ALTER %s DROP DEFAULT", getColumnName(column)));
@@ -143,7 +148,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected String getCreateType(Column column) {
+    protected String getCreateType(Column column) throws SqlModellerException {
         StringBuilder type = new StringBuilder();
         type.append(createBasicType(column));
         if (column.isKey()) {
@@ -189,7 +194,7 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected String makeAddColumnQuery(Column column) {
+    protected String makeAddColumnQuery(Column column) throws SqlModellerException {
         StringBuilder buf = new StringBuilder();
         if (column instanceof EnumColumn) {
             buf.append(makeAddEnumTypeQuery((EnumColumn) column));
@@ -282,7 +287,7 @@ public final class PostgresModeller extends SqlModeller {
      * @param column The column
      * @return The type declaration
      */
-    private String createBasicType(Column column) {
+    private String createBasicType(Column column) throws SqlModellerException {
         StringBuilder type = new StringBuilder();
         String typeName;
         if (column instanceof EnumColumn) {
@@ -295,6 +300,21 @@ public final class PostgresModeller extends SqlModeller {
                 typeName = "TEXT";
             } else {
                 typeName = format("VARCHAR(%d)", length);
+            }
+        } else if (column instanceof  DecimalColumn) {
+            switch (column.getJdbcType()) {
+                case DOUBLE:
+                    typeName = format("DOUBLE PRECISION");
+                    break;
+                case FLOAT:
+                    typeName = format("FLOAT(%d)", ((DecimalColumn) column).getPrecision());
+                    break;
+                case NUMERIC:
+                case DECIMAL:
+                    typeName = format("DECIMAL(%d,%d)", ((DecimalColumn) column).getPrecision(), ((DecimalColumn) column).getScale());
+                    break;
+                default:
+                    throw new SqlModellerException(format("Unexpected JDBC type %s in decimal column", column.getJdbcType()));
             }
         } else {
             switch (column.getJdbcType()) {

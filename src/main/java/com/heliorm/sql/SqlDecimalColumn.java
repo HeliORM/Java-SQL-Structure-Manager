@@ -10,10 +10,14 @@ public final class SqlDecimalColumn extends SqlColumn implements DecimalColumn {
     private int precision;
     private int scale;
 
-    public SqlDecimalColumn(Table table, String name, boolean nullable,int precision, int scale) {
-        super(table, name, JDBCType.DECIMAL, nullable,false);
+    public SqlDecimalColumn(Table table, String name, JDBCType jdbcType, boolean nullable, int precision, int scale) {
+        super(table, name, jdbcType, nullable, false);
         this.precision = precision;
         this.scale = scale;
+    }
+
+    public SqlDecimalColumn(Table table, String name, JDBCType jdbcType, boolean nullable) {
+        super(table, name, jdbcType, nullable, false);
     }
 
     @Override
