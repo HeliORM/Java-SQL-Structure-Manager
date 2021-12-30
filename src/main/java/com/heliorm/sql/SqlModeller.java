@@ -25,6 +25,7 @@ import static java.lang.String.format;
  * This class must be extended to provide support for specific database types.
  */
 public abstract class SqlModeller {
+    private final Supplier<Connection> supplier;
 
     /**
      * Create a modeller for MySQL/MariaDB databases.
@@ -46,8 +47,12 @@ public abstract class SqlModeller {
         return new PostgresModeller(supplier);
     }
 
-    private final Supplier<Connection> supplier;
-
+    /** Generate a text SQL schema for a table.
+     *
+     * @param table The table
+     * @return The schema
+     * @throws SqlModellerException
+     */
     public final String generateSchema(Table table) throws SqlModellerException {
        return makeCreateTableQuery(table);
     }
@@ -323,10 +328,27 @@ public abstract class SqlModeller {
      */
     protected abstract Set<String> extractSetValues(String string);
 
+    /** Determine if a column is a SET column
+     *
+     * @param colunmName The column name
+     * @param jdbcType  The column type
+     * @param typeName The column type name
+     * @return True if it is a set.
+     */
     protected abstract boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName);
 
+    /** Extract enum values from a string
+     *
+     * @param string The string
+     * @return The enum values
+     */
     protected abstract Set<String> extractEnumValues(String string);
 
+    /** Make a query to read enum values
+     *
+     * @param column The column to read the values for
+     * @return The values as a string.
+     */
     protected abstract String makeReadEnumQuery(EnumColumn column);
 
     protected final Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
