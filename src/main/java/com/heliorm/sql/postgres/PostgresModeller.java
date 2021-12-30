@@ -15,6 +15,7 @@ import com.heliorm.sql.Table;
 
 import java.sql.Connection;
 import java.sql.JDBCType;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -59,8 +60,26 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) {
-        return jdbcType == JDBCType.VARCHAR && typeName.endsWith("_" + columnName);
+    protected boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) throws SqlModellerException {
+        if (jdbcType == JDBCType.VARCHAR) {
+            try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet rs = stmt.executeQuery(makeReadEnumQuery(typeName))) {
+                return rs.next();
+            } catch (SQLException ex) {
+                throw new SqlModellerException(format("Error reading enum values from databases (%s)", ex.getMessage()), ex);
+            }
+        }
+        return false;
+    }
+
+    private String makeReadEnumQuery(String typeName) {
+        return "select n.nspname as enum_schema,  \n" +
+                "    t.typname as enum_name,\n" +
+                "    string_agg(e.enumlabel, ', ') as enum_value\n" +
+                "from pg_type t \n" +
+                "    join pg_enum e on t.oid = e.enumtypid  \n" +
+                "    join pg_catalog.pg_namespace n ON n.oid = t.typnamespace\n" +
+                "    where t.typname = '" + typeName + "' " +
+                "group by enum_schema, enum_name;";
     }
 
     @Override

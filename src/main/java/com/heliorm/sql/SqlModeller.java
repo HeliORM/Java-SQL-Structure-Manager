@@ -361,7 +361,7 @@ public abstract class SqlModeller {
         return supplier.get();
     }
 
-    protected abstract boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName);
+    protected abstract boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) throws SqlModellerException;
 
     protected final int actualTextLength(StringColumn column) {
         int length = column.getLength();
