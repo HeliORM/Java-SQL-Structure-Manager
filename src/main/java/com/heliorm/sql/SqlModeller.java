@@ -517,7 +517,7 @@ public abstract class SqlModeller {
      * @param column The column to read the values for
      * @return The values as a string.
      */
-    protected abstract String makeReadSetQuery(SetColumn column);
+    protected abstract String makeReadSetQuery(SetColumn column) throws SqlModellerException;
 
     /**
      * Generate a query to rename an index.

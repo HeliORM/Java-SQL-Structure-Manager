@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-/** An implementation of the SQL modeller that deals with PostgreSQL syntax.
- *
+/**
+ * An implementation of the SQL modeller that deals with PostgreSQL syntax.
  */
 public final class PostgresModeller extends SqlModeller {
     /**
@@ -40,11 +40,11 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    public void modifyColumn(Column current) throws SqlModellerException {
-        if (current instanceof EnumColumn) {
-            modifyEnumColumn((EnumColumn) current);
+    public void modifyColumn(Column column) throws SqlModellerException {
+        if (column instanceof EnumColumn) {
+            modifyEnumColumn((EnumColumn) column);
         } else {
-            super.modifyColumn(current);
+            super.modifyColumn(column);
         }
     }
 
@@ -122,8 +122,8 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected String makeReadSetQuery(SetColumn sqlSetColumn) {
-        return null;
+    protected String makeReadSetQuery(SetColumn sqlSetColumn) throws SqlModellerException {
+            throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
     }
 
     @Override
@@ -210,7 +210,7 @@ public final class PostgresModeller extends SqlModeller {
         if (column instanceof EnumColumn) {
             buf.append(makeAddEnumTypeQuery((EnumColumn) column));
         } else if (column instanceof SetColumn) {
-            buf.append(makeAddSetTypeQuery((SetColumn) column));
+            throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
         }
         buf.append(format("ALTER TABLE %s ADD COLUMN %s %s",
                 getTableName(column.getTable()),
@@ -228,7 +228,7 @@ public final class PostgresModeller extends SqlModeller {
                 head.append(makeAddEnumTypeQuery((EnumColumn) column));
             }
             if (column instanceof SetColumn) {
-                throw new SqlModellerException(format("SET data types are not supported for Postgres"));
+                throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
             }
             body.add(format("%s %s", getColumnName(column), getCreateType(column)));
         }
@@ -243,6 +243,19 @@ public final class PostgresModeller extends SqlModeller {
         return sql.toString();
     }
 
+    @Override
+    protected String makeRenameIndexQuery(Index current, Index changed) {
+        return format("ALTER INDEX %s RENAME to %s",
+                getIndexName(current),
+                getIndexName(changed));
+    }
+
+    /**
+     * Modify an enum colum in a PostgreSQL specific way.
+     *
+     * @param column The column to modify
+     * @throws SqlModellerException Thrown if it goes worng
+     */
     private void modifyEnumColumn(EnumColumn column) throws SqlModellerException {
         Set<String> want = column.getEnumValues();
         Set<String> have = readEnumValues(column);
@@ -257,9 +270,14 @@ public final class PostgresModeller extends SqlModeller {
                     getColumnName(column),
                     typeName(column)));
         }
-
     }
 
+    /**
+     * Generate an SQL statement to modify a PostgreSQL enum type.
+     *
+     * @param column The column
+     * @return The SQL
+     */
     private String makeAddEnumTypeQuery(EnumColumn column) {
         String typeName = typeName(column);
         StringJoiner buf = new StringJoiner("\n");
@@ -268,22 +286,6 @@ public final class PostgresModeller extends SqlModeller {
         buf.add(format("    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '%s') THEN", typeName));
         buf.add(format("        CREATE TYPE \"%s\" AS ENUM(", typeName));
         buf.add(column.getEnumValues().stream()
-                .map(v -> "'" + v + "'")
-                .reduce((a, b) -> a + "," + b).get());
-        buf.add(");");
-        buf.add("    END IF;");
-        buf.add("END$$;");
-        return buf.toString();
-    }
-
-    private String makeAddSetTypeQuery(SetColumn column) {
-        String typeName = typeName(column);
-        StringJoiner buf = new StringJoiner("\n");
-        buf.add("DO $$");
-        buf.add("BEGIN");
-        buf.add(format("    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '%s') THEN", typeName));
-        buf.add(format("        CREATE TYPE \"%s\" AS SET(", typeName));
-        buf.add(column.getSetValues().stream()
                 .map(v -> "'" + v + "'")
                 .reduce((a, b) -> a + "," + b).get());
         buf.add(");");
@@ -304,7 +306,7 @@ public final class PostgresModeller extends SqlModeller {
         if (column instanceof EnumColumn) {
             typeName = "\"" + typeName(column) + "\"";
         } else if (column instanceof SetColumn) {
-            typeName = "\"" + typeName(column) + "\"";
+            throw new SqlModellerException(format("SET data types are not supported for Postgres"));
         } else if (column instanceof StringColumn) {
             int length = ((StringColumn) column).getLength();
             if (length > 65535) {
@@ -312,7 +314,7 @@ public final class PostgresModeller extends SqlModeller {
             } else {
                 typeName = format("VARCHAR(%d)", length);
             }
-        } else if (column instanceof  DecimalColumn) {
+        } else if (column instanceof DecimalColumn) {
             switch (column.getJdbcType()) {
                 case DOUBLE:
                     typeName = format("DOUBLE PRECISION");
@@ -368,6 +370,12 @@ public final class PostgresModeller extends SqlModeller {
         return type.toString();
     }
 
+    /**
+     * Determine the PostgreSQL type name for a column.
+     *
+     * @param column The column
+     * @return The type name
+     */
     private String typeName(Column column) {
         if (column instanceof EnumColumn) {
             return format("%s_%s", column.getTable().getName(), column.getName());
@@ -403,14 +411,8 @@ public final class PostgresModeller extends SqlModeller {
 
     }
 
-    @Override
-    protected String makeRenameIndexQuery(Index current, Index changed) {
-        return format("ALTER INDEX %s RENAME to %s",
-                getIndexName(current),
-                getIndexName(changed));
-    }
-
-    /** Generate an SQL query that reads the enum data for the given type name.
+    /**
+     * Generate an SQL query that reads the enum data for the given type name.
      *
      * @param typeName The type name
      * @return The SQL query
