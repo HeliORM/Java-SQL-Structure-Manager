@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
+/** An implementation of the SQL modeller that deals with MySQL/MariaDB syntax.
+ *
+ */
 public final class MysqlModeller extends SqlModeller {
     /**
      * Create a new modeller with the given connection supplier.
@@ -42,22 +45,18 @@ public final class MysqlModeller extends SqlModeller {
             body.add(format("%s %s", getColumnName(column), getCreateType(column)));
         }
         for (Index index : table.getIndexes()) {
-            body.add(makeCreateIndex(index));
+            body.add(format("%sKEY %s (%s)",
+                    index.isUnique() ? "UNIQUE " : "",
+                    getIndexName(index),
+                    index.getColumns().stream()
+                            .map(this::getColumnName)
+                            .reduce((c1, c2) -> c1 + "," + c2).get()));
         }
         StringBuilder sql = new StringBuilder();
         sql.append(format("CREATE TABLE %s (", getTableName(table)));
         sql.append(body);
         sql.append(")");
         return sql.toString();
-    }
-
-    private String makeCreateIndex(Index index) {
-        return format("%sKEY %s (%s)",
-                index.isUnique() ? "UNIQUE " : "",
-                getIndexName(index),
-                index.getColumns().stream()
-                        .map(this::getColumnName)
-                        .reduce((c1, c2) -> c1 + "," + c2).get());
     }
 
     @Override
@@ -195,7 +194,7 @@ public final class MysqlModeller extends SqlModeller {
                 getCreateType(column));
     }
 
-
+    @Override
     protected String makeAddColumnQuery(Column column) {
         return format("ALTER TABLE %s ADD COLUMN %s %s",
                 getTableName(column.getTable()),
@@ -203,12 +202,14 @@ public final class MysqlModeller extends SqlModeller {
                 getCreateType(column));
     }
 
+    @Override
     protected String makeRemoveIndexQuery(Index index) {
         return format("DROP INDEX %s on %s",
                 getIndexName(index),
                 getTableName(index.getTable()));
     }
 
+    @Override
     protected String makeModifyIndexQuery(Index index) {
         return format("ALTER %sINDEX %s ON %s %s",
                 index.isUnique() ? "UNIQUE " : "",

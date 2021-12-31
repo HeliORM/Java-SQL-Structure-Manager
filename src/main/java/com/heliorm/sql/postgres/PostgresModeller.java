@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
+/** An implementation of the SQL modeller that deals with PostgreSQL syntax.
+ *
+ */
 public final class PostgresModeller extends SqlModeller {
     /**
      * Create a new modeller with the given connection supplier and driver.
@@ -69,17 +72,6 @@ public final class PostgresModeller extends SqlModeller {
             }
         }
         return false;
-    }
-
-    private String makeReadEnumQuery(String typeName) {
-        return "select n.nspname as enum_schema,  \n" +
-                "    t.typname as enum_name,\n" +
-                "    string_agg(e.enumlabel, ', ') as enum_value\n" +
-                "from pg_type t \n" +
-                "    join pg_enum e on t.oid = e.enumtypid  \n" +
-                "    join pg_catalog.pg_namespace n ON n.oid = t.typnamespace\n" +
-                "    where t.typname = '" + typeName + "' " +
-                "group by enum_schema, enum_name;";
     }
 
     @Override
@@ -411,10 +403,27 @@ public final class PostgresModeller extends SqlModeller {
 
     }
 
+    @Override
     protected String makeRenameIndexQuery(Index current, Index changed) {
         return format("ALTER INDEX %s RENAME to %s",
                 getIndexName(current),
                 getIndexName(changed));
+    }
+
+    /** Generate an SQL query that reads the enum data for the given type name.
+     *
+     * @param typeName The type name
+     * @return The SQL query
+     */
+    private String makeReadEnumQuery(String typeName) {
+        return "select n.nspname as enum_schema,  \n" +
+                "    t.typname as enum_name,\n" +
+                "    string_agg(e.enumlabel, ', ') as enum_value\n" +
+                "from pg_type t \n" +
+                "    join pg_enum e on t.oid = e.enumtypid  \n" +
+                "    join pg_catalog.pg_namespace n ON n.oid = t.typnamespace\n" +
+                "    where t.typname = '" + typeName + "' " +
+                "group by enum_schema, enum_name;";
     }
 
 }
