@@ -47,14 +47,15 @@ public abstract class SqlModeller {
         return new PostgresModeller(supplier);
     }
 
-    /** Generate a text SQL schema for a table.
+    /**
+     * Generate a text SQL schema for a table.
      *
      * @param table The table
      * @return The schema
      * @throws SqlModellerException
      */
     public final String generateSchema(Table table) throws SqlModellerException {
-       return makeCreateTableQuery(table);
+        return makeCreateTableQuery(table);
     }
 
     /**
@@ -328,29 +329,39 @@ public abstract class SqlModeller {
      */
     protected abstract Set<String> extractSetValues(String string);
 
-    /** Determine if a column is a SET column
+    /**
+     * Determine if a column is a SET column
      *
      * @param colunmName The column name
-     * @param jdbcType  The column type
-     * @param typeName The column type name
+     * @param jdbcType   The column type
+     * @param typeName   The column type name
      * @return True if it is a set.
      */
     protected abstract boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName);
 
-    /** Extract enum values from a string
+    /**
+     * Extract enum values from a string
      *
      * @param string The string
      * @return The enum values
      */
     protected abstract Set<String> extractEnumValues(String string);
 
-    /** Make a query to read enum values
+    /**
+     * Make a query to read enum values
      *
      * @param column The column to read the values for
      * @return The values as a string.
      */
     protected abstract String makeReadEnumQuery(EnumColumn column);
 
+    /**
+     * Read the possible enum values for a ENUM column
+     *
+     * @param column The column
+     * @return The set values.
+     * @throws SqlModellerException
+     */
     protected final Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
         String query = makeReadEnumQuery(column);
         try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
@@ -364,6 +375,166 @@ public abstract class SqlModeller {
         }
     }
 
+    /**
+     * Generate SQL statement to add an index to a table.
+     *
+     * @param index The index
+     * @return The SQL
+     */
+    protected final String makeAddIndexQuery(Index index) {
+        return format("CREATE %sINDEX %s on %s (%s)",
+                index.isUnique() ? "UNIQUE " : "",
+                getIndexName(index),
+                getTableName(index.getTable()),
+                index.getColumns().stream()
+                        .map(this::getColumnName)
+                        .reduce((c1, c2) -> c1 + "," + c2).get());
+    }
+
+    /**
+     * Generate SQL statement to create a table.
+     *
+     * @param table The table
+     * @return The SQL
+     */
+    protected abstract String makeCreateTableQuery(Table table) throws SqlModellerException;
+
+    /**
+     * Generate the database specific column name from a column.
+     *
+     * @param column The column
+     * @return The name
+     */
+    protected abstract String getColumnName(Column column);
+
+    /**
+     * Generate the database specific column type as used when creating a column.
+     *
+     * @param column The column
+     * @return The type text
+     * @throws SqlModellerException
+     */
+    protected abstract String getCreateType(Column column) throws SqlModellerException;
+
+    /**
+     * Generate the database specific table name from a table.
+     *
+     * @param table The table
+     * @return The name
+     */
+    protected abstract String getTableName(Table table);
+
+
+    /**
+     * Generate the database specific database name from a database.
+     *
+     * @param database The database
+     * @return The name
+     */
+    protected abstract String getDatabaseName(Database database);
+
+    /**
+     * Get a database connection.
+     *
+     * @return The connection
+     */
+    protected final Connection con() {
+        return supplier.get();
+    }
+
+
+    /**
+     * Generate SQL statement to modify an index.
+     *
+     * @param index The index
+     * @return The SQL
+     */
+    protected abstract String makeModifyIndexQuery(Index index);
+
+    /**
+     * Determine if a column is an ENUM column
+     *
+     * @param columnName The column name
+     * @param jdbcType   The column type
+     * @param typeName   The column type name
+     * @return True if it is a set.
+     */
+    protected abstract boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) throws SqlModellerException;
+
+    /**
+     * Determine the effective character length of a string column.
+     *
+     * @param column The column
+     * @return The effective length
+     */
+    protected final int actualTextLength(StringColumn column) {
+        int length = column.getLength();
+        if (length >= 16777215) {
+            return 2147483647;
+        } else if (length > 65535) {
+            return 16777215;
+        } else if (length > 255) {
+            return 65535;
+        }
+        return 255;
+    }
+
+    /** Generate a query to modify a column in a table.
+     *
+     * @param column The column
+     * @return The SQL statement
+     * @throws SqlModellerException
+     */
+    protected abstract String makeModifyColumnQuery(Column column) throws SqlModellerException;
+
+    /**
+     * Generate a query to add a column to a table
+     *
+     * @param column The column to add
+     * @return The query
+     */
+    protected abstract String makeAddColumnQuery(Column column) throws SqlModellerException;
+
+    /**
+     * Generate a query to remove an index.
+     *
+     * @param index The index to remove
+     * @return The query
+     */
+    protected abstract String makeRemoveIndexQuery(Index index);
+
+    /**
+     * Get the query syntax index name for the index.
+     *
+     * @param index The index
+     * @return The name
+     */
+    protected abstract String getIndexName(Index index);
+
+    /**
+     * Make a query to read set values
+     *
+     * @param column The column to read the values for
+     * @return The values as a string.
+     */
+    protected abstract String makeReadSetQuery(SetColumn column);
+
+    /**
+     * Generate a query to rename an index.
+     *
+     * @param current The current index
+     * @param changed The changed index
+     * @return The query
+     */
+    protected abstract String makeRenameIndexQuery(Index current, Index changed);
+
+    /**
+     * Read the possible set values for a SET column
+     *
+     * @param column The column
+     * @return The set values.
+     * @throws SqlModellerException
+     */
     private Set<String> readSetValues(SetColumn column) throws SqlModellerException {
         String query = makeReadSetQuery(column);
         try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
@@ -377,40 +548,22 @@ public abstract class SqlModeller {
         }
     }
 
-    protected abstract String getDatabaseName(Database database);
-
-    protected final Connection con() {
-        return supplier.get();
-    }
-
-    protected abstract boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) throws SqlModellerException;
-
-    protected final int actualTextLength(StringColumn column) {
-        int length = column.getLength();
-        if (length >= 16777215) {
-            return 2147483647;
-        } else if (length > 65535) {
-            return 16777215;
-        } else if (length > 255) {
-            return 65535;
-        }
-        return 255;
-    }
-
-    protected abstract String makeCreateTableQuery(Table table) throws SqlModellerException;
-
-    protected abstract String getColumnName(Column column);
-
-    protected abstract String getCreateType(Column column) throws SqlModellerException;
-
-    protected abstract String getTableName(Table table);
-
+    /**
+     * Generate a query to delete a table.
+     *
+     * @param table The table to delete
+     * @return The query
+     */
     private String makeDeleteTableQuery(Table table) {
         return format("DROP TABLE %s", getTableName(table));
     }
 
-    protected abstract String makeModifyIndexQuery(Index index);
-
+    /** Generate a SQL statement to rename a column in a table.
+     *
+     * @param column The current column
+     * @param column The changed column
+     * @return The SQL
+     */
     private String makeRenameColumnQuery(Column column, Column changed) {
         return format("ALTER TABLE %s RENAME COLUMN %s TO %s",
                 getTableName(column.getTable()),
@@ -418,31 +571,23 @@ public abstract class SqlModeller {
                 getColumnName(changed));
     }
 
+    /** Generate a SQL statement to delete a column from a table.
+     *
+     * @param column The column to delete
+     * @return The SQL
+     */
     private String makeDeleteColumnQuery(Column column) {
         return format("ALTER TABLE %s DROP COLUMN %s",
                 getTableName(column.getTable()),
                 getColumnName(column));
     }
 
-
-    protected abstract String makeModifyColumnQuery(Column column) throws SqlModellerException;
-
-    protected abstract String makeAddColumnQuery(Column column) throws SqlModellerException;
-
-    protected final String makeAddIndexQuery(Index index) {
-        return format("CREATE %sINDEX %s on %s (%s)",
-                index.isUnique() ? "UNIQUE " : "",
-                getIndexName(index),
-                getTableName(index.getTable()),
-                index.getColumns().stream()
-                        .map(this::getColumnName)
-                        .reduce((c1, c2) -> c1 + "," + c2).get());
-    }
-
-    protected abstract String makeRemoveIndexQuery(Index index);
-
-    protected abstract String getIndexName(Index index);
-
+    /**
+     * Determine if the given JDBC type represents a string column
+     *
+     * @param jdbcType The JDBC type
+     * @return True if it is
+     */
     private boolean isStringColumn(JDBCType jdbcType) {
         switch (jdbcType) {
             case CHAR:
@@ -452,10 +597,6 @@ public abstract class SqlModeller {
         }
         return false;
     }
-
-    protected abstract String makeReadSetQuery(SetColumn column);
-
-    protected abstract String makeRenameIndexQuery(Index current, Index changed);
 
     /**
      * Read a column model from a SQL result set.
