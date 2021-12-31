@@ -7,40 +7,51 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/** Tool for verifying if a user supplied SQL data structure is the same as the one in a database.
+ *
+ */
 public final class SqlVerifier {
 
     private final SqlModeller modeller;
     private boolean deleteMissingColumns = false;
 
+    /** Create a new verifier for the supplied SQL modeller.
+     *
+     * @param modeller The modeller to use
+     * @return The verifier
+     */
     public static SqlVerifier forModeller(SqlModeller modeller) {
         return new SqlVerifier(modeller);
     }
 
-    private SqlVerifier(SqlModeller modeller) {
-        this.modeller = modeller;
-    }
-
+    /** Setup verifier to delete missing columns from a database table
+     *
+     * @param delete True if it must delete.
+     */
     void setDeleteMissingColumns(boolean delete) {
         this.deleteMissingColumns = delete;
     }
 
-    public List<Action> verifyTable(Table table) throws SqlModellerException {
+    /** Verify that a table in a SQL database is the same as the abstraction supplied, and change the database
+     * to conform if not.
+     *
+     * @param table The table
+     * @return The changes made to synchronize the table.
+     * @throws SqlModellerException
+     */
+    public List<Action> synchronizeDatabaseTable(Table table) throws SqlModellerException {
         if (!modeller.tableExists(table)) {
             modeller.createTable(table);
             return Collections.singletonList(Action.createTable(table));
         } else {
-            return verifyStructure(table);
+            List<Action> actions = new ArrayList<>();
+            actions.addAll(synchronizeColumns(table));
+            actions.addAll(synchronizeIndexes(table));
+            return actions;
         }
     }
 
-    private List<Action> verifyStructure(Table table) throws SqlModellerException {
-        List<Action> actions = new ArrayList<>();
-        actions.addAll(verifyColumns(table));
-        actions.addAll(verifyIndexes(table));
-        return actions;
-    }
-
-    private List<Action> verifyColumns(Table table) throws SqlModellerException {
+    private List<Action> synchronizeColumns(Table table) throws SqlModellerException {
         Table sqlTable = modeller.readTable(table.getDatabase(), table.getName());
         Map<String, Column> tableColumns = table.getColumns().stream()
                 .collect(Collectors.toMap(col -> col.getName(), col -> col));
@@ -72,7 +83,7 @@ public final class SqlVerifier {
         return actions;
     }
 
-    private List<Action> verifyIndexes(Table table) throws SqlModellerException {
+    private List<Action> synchronizeIndexes(Table table) throws SqlModellerException {
         Table sqlTable = modeller.readTable(table.getDatabase(), table.getName());
         Map<String, Index> tableIndexes = table.getIndexes().stream()
                 .collect(Collectors.toMap(col -> col.getName(), col -> col));
@@ -136,6 +147,10 @@ public final class SqlVerifier {
             }
         }
         return true;
+    }
+
+    private SqlVerifier(SqlModeller modeller) {
+        this.modeller = modeller;
     }
 
 }

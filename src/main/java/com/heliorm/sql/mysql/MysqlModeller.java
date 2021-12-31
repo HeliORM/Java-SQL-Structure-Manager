@@ -169,7 +169,6 @@ public final class MysqlModeller extends SqlModeller {
         }
     }
 
-
     @Override
     protected String makeRenameIndexQuery(Index current, Index changed) {
         return format("ALTER TABLE %s RENAME INDEX %s TO %s", getTableName(current.getTable()), getIndexName(current), getIndexName(changed));
