@@ -2,27 +2,28 @@ package com.heliorm.sql.postgres;
 
 import com.heliorm.sql.BitColumn;
 import com.heliorm.sql.BooleanColumn;
+import com.heliorm.sql.Column;
 import com.heliorm.sql.Database;
 import com.heliorm.sql.DecimalColumn;
 import com.heliorm.sql.EnumColumn;
-import com.heliorm.sql.SqlModeller;
-import com.heliorm.sql.SqlModellerException;
-import com.heliorm.sql.Column;
 import com.heliorm.sql.Index;
 import com.heliorm.sql.SetColumn;
+import com.heliorm.sql.SqlModeller;
+import com.heliorm.sql.SqlModellerException;
 import com.heliorm.sql.StringColumn;
 import com.heliorm.sql.Table;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -192,19 +193,6 @@ public final class PostgresModeller extends SqlModeller {
     }
 
     @Override
-    protected String makeReadEnumQuery(EnumColumn column) {
-        return format("SELECT ENUM_RANGE(NULL::\"%s\")", typeName(column));
-    }
-
-    @Override
-    protected Set<String> extractEnumValues(String text) {
-        return Arrays.stream(text.replace("{", "").replace("}", "")
-                        .split(","))
-                .map(val -> val.substring(1, val.length() - 1))
-                .collect(Collectors.toSet());
-    }
-
-    @Override
     protected String makeAddColumnQuery(Column column) throws SqlModellerException {
         StringBuilder buf = new StringBuilder();
         if (column instanceof EnumColumn) {
@@ -248,6 +236,41 @@ public final class PostgresModeller extends SqlModeller {
         return format("ALTER INDEX %s RENAME to %s",
                 getIndexName(current),
                 getIndexName(changed));
+    }
+
+    @Override
+    protected Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
+        try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet rs = stmt.executeQuery(makeReadEnumQuery(getSqlTypeName(column)))) {
+            if (rs.next()) {
+                return Stream.of(rs.getString("enum_value").split(","))
+                        .map(text -> text.trim())
+                        .collect(Collectors.toSet());
+            }
+            throw new SqlModellerException(format("No enum values found for column %s in table %s ", column.getName(), column.getTable().getName()));
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error reading enum values (%s)", ex.getMessage()), ex);
+        }
+
+    }
+
+    /** Read the SQL type name for the give column from the database meta data.
+     *
+     * @param column The column
+     * @return The type name
+     * @throws SqlModellerException
+     */
+    private String getSqlTypeName(Column column) throws SqlModellerException {
+        try (Connection con = con()) {
+            DatabaseMetaData dbm = con.getMetaData();
+            try (ResultSet rs = dbm.getColumns(column.getTable().getDatabase().getName(), null, column.getTable().getName(), column.getName())) {
+                if (rs.next()) {
+                   return rs.getString("TYPE_NAME");
+                }
+            }
+            throw new SqlModellerException(format("Column %s found in table %s ", column.getName(), column.getTable().getName()));
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error determining SQL type name for column %s in table %s ", column.getName(), column.getTable().getName()));
+        }
     }
 
     /**

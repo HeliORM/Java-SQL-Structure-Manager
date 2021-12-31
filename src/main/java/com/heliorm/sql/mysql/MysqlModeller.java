@@ -15,9 +15,11 @@ import com.heliorm.sql.Table;
 
 import java.sql.Connection;
 import java.sql.JDBCType;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
@@ -25,8 +27,8 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-/** An implementation of the SQL modeller that deals with MySQL/MariaDB syntax.
- *
+/**
+ * An implementation of the SQL modeller that deals with MySQL/MariaDB syntax.
  */
 public final class MysqlModeller extends SqlModeller {
     /**
@@ -147,25 +149,30 @@ public final class MysqlModeller extends SqlModeller {
     }
 
     @Override
-    protected String makeReadEnumQuery(EnumColumn column) {
-        return format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
+    protected Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
+        String query = format("SELECT SUBSTRING(COLUMN_TYPE,5) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='%s' " +
                         "AND TABLE_NAME='%s' AND COLUMN_NAME='%s'",
                 column.getTable().getDatabase().getName(),
                 column.getTable().getName(),
                 column.getName());
+        try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
+            if (ers.next()) {
+                return Arrays.stream(ers.getString(1).replace("enum", "").replace("(", "").replace(")", "")
+                                .split(","))
+                        .map(val -> val.substring(1, val.length() - 1))
+                        .collect(Collectors.toSet());
+            }
+            return Collections.EMPTY_SET;
+        } catch (SQLException ex) {
+            throw new SqlModellerException(format("Error reading enum values from %s.%s.%s (%s)",
+                    column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName(), ex.getMessage()), ex);
+        }
     }
+
 
     @Override
     protected String makeRenameIndexQuery(Index current, Index changed) {
         return format("ALTER TABLE %s RENAME INDEX %s TO %s", getTableName(current.getTable()), getIndexName(current), getIndexName(changed));
-    }
-
-    @Override
-    protected final Set<String> extractEnumValues(String text) {
-        return Arrays.stream(text.replace("enum", "").replace("(", "").replace(")", "")
-                        .split(","))
-                .map(val -> val.substring(1, val.length() - 1))
-                .collect(Collectors.toSet());
     }
 
     @Override

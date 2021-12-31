@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
@@ -340,40 +339,13 @@ public abstract class SqlModeller {
     protected abstract boolean isSetColumn(String colunmName, JDBCType jdbcType, String typeName);
 
     /**
-     * Extract enum values from a string
-     *
-     * @param string The string
-     * @return The enum values
-     */
-    protected abstract Set<String> extractEnumValues(String string);
-
-    /**
-     * Make a query to read enum values
-     *
-     * @param column The column to read the values for
-     * @return The values as a string.
-     */
-    protected abstract String makeReadEnumQuery(EnumColumn column);
-
-    /**
      * Read the possible enum values for a ENUM column
      *
      * @param column The column
      * @return The set values.
      * @throws SqlModellerException
      */
-    protected final Set<String> readEnumValues(EnumColumn column) throws SqlModellerException {
-        String query = makeReadEnumQuery(column);
-        try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet ers = stmt.executeQuery(query)) {
-            if (ers.next()) {
-                return extractEnumValues(ers.getString(1));
-            }
-            return Collections.EMPTY_SET;
-        } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error reading enum values from %s.%s.%s (%s)",
-                    column.getTable().getDatabase().getName(), column.getTable().getName(), column.getName(), ex.getMessage()), ex);
-        }
-    }
+    protected abstract Set<String> readEnumValues(EnumColumn column) throws SqlModellerException;
 
     /**
      * Generate SQL statement to add an index to a table.
