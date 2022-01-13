@@ -5,7 +5,7 @@ package com.heliorm.sql;
  */
 public interface StringColumn extends Column {
 
-    /** Return the lenght of the string column.
+    /** Return the length of the string column.
      *
      * @return The length
      */

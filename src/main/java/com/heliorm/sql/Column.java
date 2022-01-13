@@ -1,7 +1,6 @@
 package com.heliorm.sql;
 
 import java.sql.JDBCType;
-import java.util.Optional;
 
 /** Abstraction representing a SQL table column
  *

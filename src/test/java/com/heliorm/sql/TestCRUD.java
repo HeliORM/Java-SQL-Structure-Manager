@@ -7,7 +7,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -86,6 +85,16 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(23)
+    public void addBinaryColumn() throws SqlModellerException {
+        TestColumn sex = new TestBinaryColumn(table, "photo", JDBCType.LONGVARBINARY, 1*1024*1024);
+        table.addColumn(sex);
+            modeller.addColumn(sex);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+        @Test
     @Order(29)
     public void renameColumn() throws SqlModellerException {
         Column fullName = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, 42);
