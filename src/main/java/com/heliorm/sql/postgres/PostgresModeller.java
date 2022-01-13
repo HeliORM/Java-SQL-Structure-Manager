@@ -1,5 +1,6 @@
 package com.heliorm.sql.postgres;
 
+import com.heliorm.sql.BinaryColumn;
 import com.heliorm.sql.BitColumn;
 import com.heliorm.sql.BooleanColumn;
 import com.heliorm.sql.Column;
@@ -106,6 +107,9 @@ public final class PostgresModeller extends SqlModeller {
                         && ((DecimalColumn) one).getScale() == ((DecimalColumn) other).getScale();
             }
             return other.getJdbcType() == JDBCType.NUMERIC;
+        }
+        if (one instanceof BinaryColumn) {
+            return other instanceof BinaryColumn;
         }
         if (one.getJdbcType() == JDBCType.NUMERIC) {
             switch (other.getJdbcType()) {
@@ -352,7 +356,11 @@ public final class PostgresModeller extends SqlModeller {
                 default:
                     throw new SqlModellerException(format("Unexpected JDBC type %s in decimal column", column.getJdbcType()));
             }
-        } else {
+        }
+        else if (column instanceof BinaryColumn) {
+            typeName = "BYTEA";
+        }
+        else {
             switch (column.getJdbcType()) {
                 case TINYINT:
                     if (column.isKey() && column.isAutoIncrement()) {

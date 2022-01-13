@@ -87,14 +87,14 @@ public class TestCRUD extends AbstractSqlTest {
     @Test
     @Order(23)
     public void addBinaryColumn() throws SqlModellerException {
-        TestColumn sex = new TestBinaryColumn(table, "photo", JDBCType.LONGVARBINARY, 1*1024*1024);
+        TestColumn sex = new TestBinaryColumn(table, "photo", JDBCType.LONGVARBINARY, 1 * 1024 * 1024);
         table.addColumn(sex);
-            modeller.addColumn(sex);
+        modeller.addColumn(sex);
         Table loaded = modeller.readTable(db, "Person");
         assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
     }
 
-        @Test
+    @Test
     @Order(29)
     public void renameColumn() throws SqlModellerException {
         Column fullName = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, 42);
