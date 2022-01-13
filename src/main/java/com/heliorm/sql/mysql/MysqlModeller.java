@@ -4,6 +4,7 @@ import com.heliorm.sql.BinaryColumn;
 import com.heliorm.sql.BitColumn;
 import com.heliorm.sql.BooleanColumn;
 import com.heliorm.sql.Database;
+import com.heliorm.sql.DateTimeColumn;
 import com.heliorm.sql.DecimalColumn;
 import com.heliorm.sql.EnumColumn;
 import com.heliorm.sql.SqlModeller;
@@ -137,6 +138,9 @@ public final class MysqlModeller extends SqlModeller {
             } else {
                 typeName = format("TINYBLOB");
             }
+        }
+        else if (column instanceof DateTimeColumn) {
+            typeName = column.getJdbcType().getName();
         }
         type.append(typeName);
         if (!column.isNullable()) {

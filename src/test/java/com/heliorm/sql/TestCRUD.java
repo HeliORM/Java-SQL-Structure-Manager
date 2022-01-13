@@ -95,6 +95,37 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(24)
+    public void addDateColumn() throws SqlModellerException {
+        TestColumn created = new TestDateTimeColumn(table, "created", JDBCType.DATE);
+        table.addColumn(created);
+        modeller.addColumn(created);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(25)
+    public void addTimeColumn() throws SqlModellerException {
+        TestColumn theTime = new TestDateTimeColumn(table, "theTime", JDBCType.TIME);
+        table.addColumn(theTime);
+        modeller.addColumn(theTime);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(26)
+    public void addTimestampColumn() throws SqlModellerException {
+        TestColumn stamp = new TestDateTimeColumn(table, "stamp", JDBCType.TIMESTAMP, false);
+        table.addColumn(stamp);
+        modeller.addColumn(stamp);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+
+    @Test
     @Order(29)
     public void renameColumn() throws SqlModellerException {
         Column fullName = new TestStringColumn(table, "fullName", JDBCType.VARCHAR, 42);

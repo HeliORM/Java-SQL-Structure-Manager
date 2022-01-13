@@ -433,6 +433,7 @@ public abstract class SqlModeller {
      */
     protected abstract boolean isEnumColumn(String columnName, JDBCType jdbcType, String typeName) throws SqlModellerException;
 
+
     /**
      * Determine the effective character length of a string column.
      *
@@ -573,6 +574,21 @@ public abstract class SqlModeller {
         return false;
     }
 
+    /**
+     * Determine if the given JDBC type represents a date/time column
+     *
+     * @param jdbcType The JDBC type
+     * @return True if it is
+     */
+    private boolean isDateTimeColumn(JDBCType jdbcType) {
+        switch (jdbcType) {
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
+                return true;
+        }
+        return false;
+    }
 
     /**
      * Determine if the given JDBC type represents a binary column
@@ -616,6 +632,9 @@ public abstract class SqlModeller {
                 return new SqlStringColumn(table, columnName, jdbcType, nullable, size.get());
             } else if (isBinaryColumn(jdbcType)) {
                 return new SqlBinaryColumn(table, columnName, jdbcType, nullable, size.get());
+            }
+            if (isDateTimeColumn(jdbcType)) {
+                return new SqlDateTimeColumn(table, columnName, jdbcType, nullable);
             }
             switch (jdbcType) {
                 case BIT:
