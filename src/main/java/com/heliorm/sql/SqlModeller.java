@@ -451,7 +451,8 @@ public abstract class SqlModeller {
         return 255;
     }
 
-    /** Generate a query to modify a column in a table.
+    /**
+     * Generate a query to modify a column in a table.
      *
      * @param column The column
      * @return The SQL statement
@@ -530,7 +531,8 @@ public abstract class SqlModeller {
         return format("DROP TABLE %s", getTableName(table));
     }
 
-    /** Generate a SQL statement to rename a column in a table.
+    /**
+     * Generate a SQL statement to rename a column in a table.
      *
      * @param column The current column
      * @param column The changed column
@@ -543,7 +545,8 @@ public abstract class SqlModeller {
                 getColumnName(changed));
     }
 
-    /** Generate a SQL statement to delete a column from a table.
+    /**
+     * Generate a SQL statement to delete a column from a table.
      *
      * @param column The column to delete
      * @return The SQL
@@ -570,6 +573,24 @@ public abstract class SqlModeller {
         return false;
     }
 
+
+    /**
+     * Determine if the given JDBC type represents a binary column
+     *
+     * @param jdbcType The JDBC type
+     * @return True if it is
+     */
+    private boolean isBinaryColumn(JDBCType jdbcType) {
+        switch (jdbcType) {
+            case LONGVARBINARY:
+            case VARBINARY:
+            case BINARY:
+            case BLOB:
+                return true;
+        }
+        return false;
+    }
+
     /**
      * Read a column model from a SQL result set.
      *
@@ -581,20 +602,7 @@ public abstract class SqlModeller {
     private SqlColumn getColumnFromResultSet(Table table, ResultSet rs) throws SqlModellerException {
         try {
             JDBCType jdbcType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
-            Optional<Integer> size;
-            switch (jdbcType) {
-                case CHAR:
-                case VARCHAR:
-                case LONGVARCHAR:
-                case DECIMAL:
-                case DOUBLE:
-                case BIT:
-                case NUMERIC:
-                    size = Optional.of(rs.getInt("COLUMN_SIZE"));
-                    break;
-                default:
-                    size = Optional.empty();
-            }
+            Optional<Integer> size = Optional.ofNullable(rs.getInt("COLUMN_SIZE"));
             boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String columnName = rs.getString("COLUMN_NAME");
@@ -606,6 +614,8 @@ public abstract class SqlModeller {
                 return new SqlSetColumn(table, columnName, nullable, readSetValues(new SqlSetColumn(table, columnName, nullable, Collections.emptySet())));
             } else if (isStringColumn(jdbcType)) {
                 return new SqlStringColumn(table, columnName, jdbcType, nullable, size.get());
+            } else if (isBinaryColumn(jdbcType)) {
+                return new SqlBinaryColumn(table, columnName, jdbcType, nullable, size.get());
             }
             switch (jdbcType) {
                 case BIT:

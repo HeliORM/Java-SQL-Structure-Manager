@@ -1,5 +1,6 @@
 package com.heliorm.sql.mysql;
 
+import com.heliorm.sql.BinaryColumn;
 import com.heliorm.sql.BitColumn;
 import com.heliorm.sql.BooleanColumn;
 import com.heliorm.sql.Database;
@@ -124,6 +125,18 @@ public final class MysqlModeller extends SqlModeller {
             }
         } else if (column instanceof DecimalColumn) {
             typeName = format("DECIMAL(%d,%d)", ((DecimalColumn) column).getPrecision(), ((DecimalColumn) column).getScale());
+        }
+        else if (column instanceof BinaryColumn) {
+            int length = ((BinaryColumn)column).getLength();
+            if (length >= 16777215) {
+                typeName = "LONGBLOB";
+            } else if (length > 65535) {
+                typeName = "MEDIUMBLOB";
+            } else if (length > 255) {
+                typeName = "BLOB";
+            } else {
+                typeName = format("TINYBLOB");
+            }
         }
         type.append(typeName);
         if (!column.isNullable()) {
