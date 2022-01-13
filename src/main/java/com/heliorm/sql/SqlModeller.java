@@ -74,7 +74,7 @@ public abstract class SqlModeller {
                 }
             }
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error scanning database '%s' (%s)", name, ex.getMessage()));
+            throw new SqlModellerException(format("Error scanning database '%s' (%s)", name, ex.getMessage()), ex);
         }
         return database;
     }
@@ -136,7 +136,7 @@ public abstract class SqlModeller {
             }
             return table;
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error scanning table '%s' (%s)", name, ex.getMessage()));
+            throw new SqlModellerException(format("Error scanning table '%s' (%s)", name, ex.getMessage()), ex);
         }
     }
 
@@ -154,7 +154,7 @@ public abstract class SqlModeller {
                 return tables.next();
             }
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error checking table '%s' (%s)", table.getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error checking table '%s' (%s)", table.getName(), ex.getMessage()), ex);
         }
     }
 
@@ -168,7 +168,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeCreateTableQuery(table));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error creating table '%s' (%s)", table.getName(), ex.getMessage()), ex);
         }
     }
 
@@ -182,7 +182,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeDeleteTableQuery(table));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error deleting table '%s' (%s)", table.getName(), ex.getMessage()), ex);
         }
     }
 
@@ -196,7 +196,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddColumnQuery(column));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error adding column '%s' to table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()), ex);
         }
     }
 
@@ -211,7 +211,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameColumnQuery(current, changed));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error renaming column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()), ex);
         }
     }
 
@@ -225,7 +225,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeDeleteColumnQuery(column));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error deleting column '%s' from table '%s' (%s)", column.getName(), column.getTable().getName(), ex.getMessage()), ex);
         }
     }
 
@@ -239,7 +239,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeModifyColumnQuery(current));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error modifying column '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()), ex);
         }
     }
 
@@ -253,7 +253,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeAddIndexQuery(index));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error adding index '%s' in table '%s' (%s)", index.getName(), index.getTable().getName(), ex.getMessage()), ex);
         }
     }
 
@@ -268,7 +268,7 @@ public abstract class SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
             stmt.executeUpdate(makeRenameIndexQuery(current, changed));
         } catch (SQLException ex) {
-            throw new SqlModellerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()));
+            throw new SqlModellerException(format("Error renaming index '%s' in table '%s' (%s)", current.getName(), current.getTable().getName(), ex.getMessage()), ex);
         }
     }
 
