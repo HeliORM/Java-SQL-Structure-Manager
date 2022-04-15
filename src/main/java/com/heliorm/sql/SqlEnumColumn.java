@@ -10,8 +10,8 @@ class SqlEnumColumn extends SqlColumn implements EnumColumn{
 
     private final Set<String> enumValues;
 
-    SqlEnumColumn(Table table, String name, boolean nullable, Set<String> enumValues) {
-        super(table, name, JDBCType.OTHER,  nullable, false);
+    SqlEnumColumn(Table table, String name, boolean nullable, String defaultValue, Set<String> enumValues) {
+        super(table, name, JDBCType.OTHER,  nullable, defaultValue, false);
         this.enumValues = enumValues;
     }
 

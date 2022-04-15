@@ -9,8 +9,8 @@ final class SqlBitColumn extends SqlColumn implements BitColumn {
 
     private int bits;
 
-    public SqlBitColumn(Table table, String name, boolean nullable, int bits) {
-        super(table, name, JDBCType.BIT, nullable, false);
+    public SqlBitColumn(Table table, String name, boolean nullable, String devVal, int bits) {
+        super(table, name, JDBCType.BIT, nullable, devVal,false);
         this.bits = bits;
     }
 

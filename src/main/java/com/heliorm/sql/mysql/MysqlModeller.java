@@ -146,6 +146,9 @@ public final class MysqlModeller extends SqlModeller {
         if (!column.isNullable()) {
             type.append(" NOT NULL");
         }
+        if (column.getDefault() != null) {
+            type.append(format(" DEFAULT '%s'", column.getDefault()));
+        }
         if (column.isAutoIncrement()) {
             type.append(" AUTO_INCREMENT");
         }
@@ -291,4 +294,8 @@ public final class MysqlModeller extends SqlModeller {
         return one.getJdbcType() == other.getJdbcType();
     }
 
+    @Override
+    protected String extractDefault(String text) {
+        return text;
+    }
 }

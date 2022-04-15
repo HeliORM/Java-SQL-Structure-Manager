@@ -170,6 +170,26 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(32)
+    public void addStringColumnWithDefault() throws SqlModellerException {
+        TestColumn surname = new TestStringColumn(table, "surname", JDBCType.LONGVARCHAR, false, "", false, false, 30);
+        table.addColumn(surname);
+        modeller.addColumn(surname);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
+    @Order(33)
+    public void changeStringColumnDefault() throws SqlModellerException {
+        TestColumn surname = new TestStringColumn(table, "surname", JDBCType.LONGVARCHAR, false, "Smith", false, false, 30);
+        table.addColumn(surname);
+        modeller.modifyColumn(surname);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
     @Order(40)
     public void addEnumColumn() throws SqlModellerException {
         TestColumn type = new TestEnumColumn(table, "type", true, new HashSet<>(Arrays.asList("APE", "BEAST")));

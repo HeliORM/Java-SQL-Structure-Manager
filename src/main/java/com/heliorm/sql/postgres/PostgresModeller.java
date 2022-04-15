@@ -128,7 +128,7 @@ public final class PostgresModeller extends SqlModeller {
 
     @Override
     protected String makeReadSetQuery(SetColumn sqlSetColumn) throws SqlModellerException {
-            throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
+        throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
     }
 
     @Override
@@ -173,6 +173,8 @@ public final class PostgresModeller extends SqlModeller {
         if (!column.isNullable()) {
             type.append(" NOT NULL");
         }
+        if (column.getDefault() != null)
+            type.append(format(" DEFAULT '%s'", column.getDefault()));
         return type.toString();
     }
 
@@ -254,10 +256,20 @@ public final class PostgresModeller extends SqlModeller {
         } catch (SQLException ex) {
             throw new SqlModellerException(format("Error reading enum values (%s)", ex.getMessage()), ex);
         }
-
     }
 
-    /** Read the SQL type name for the give column from the database meta data.
+
+    @Override
+    protected String extractDefault(String text) {
+        int idx = text.indexOf("::");
+        if (idx > 0) {
+            return text.substring(0, idx).replace("'", "");
+        }
+        return text;
+    }
+
+    /**
+     * Read the SQL type name for the give column from the database meta data.
      *
      * @param column The column
      * @return The type name
@@ -268,7 +280,7 @@ public final class PostgresModeller extends SqlModeller {
             DatabaseMetaData dbm = con.getMetaData();
             try (ResultSet rs = dbm.getColumns(column.getTable().getDatabase().getName(), null, column.getTable().getName(), column.getName())) {
                 if (rs.next()) {
-                   return rs.getString("TYPE_NAME");
+                    return rs.getString("TYPE_NAME");
                 }
             }
             throw new SqlModellerException(format("Column %s found in table %s ", column.getName(), column.getTable().getName()));
@@ -356,11 +368,9 @@ public final class PostgresModeller extends SqlModeller {
                 default:
                     throw new SqlModellerException(format("Unexpected JDBC type %s in decimal column", column.getJdbcType()));
             }
-        }
-        else if (column instanceof BinaryColumn) {
+        } else if (column instanceof BinaryColumn) {
             typeName = "BYTEA";
-        }
-        else {
+        } else {
             switch (column.getJdbcType()) {
                 case TINYINT:
                     if (column.isKey() && column.isAutoIncrement()) {
@@ -436,10 +446,20 @@ public final class PostgresModeller extends SqlModeller {
                 } else {
                     return "BIGINT";
                 }
+            case LONGVARCHAR:
+                if (column instanceof StringColumn) {
+                    int length = ((StringColumn) column).getLength();
+                    if (length > 65535) {
+                        return "TEXT";
+                    } else {
+                        return format("VARCHAR(%d)", length);
+                    }
+                }
+                break;
             default:
                 return column.getJdbcType().getName();
         }
-
+        return column.getJdbcType().getName();
     }
 
     /**

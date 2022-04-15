@@ -14,14 +14,16 @@ abstract class SqlColumn implements Column {
     private final boolean nullable;
     private boolean key;
     private boolean autoIncrement;
+    private String defaultValue;
 
-    SqlColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean autoIncrement) {
+    SqlColumn(Table table, String name, JDBCType jdbcType, boolean nullable, String defaultValue, boolean autoIncrement) {
         this.table = table;
         this.name = name;
         this.jdbcType = jdbcType;
         this.nullable = nullable;
         this.key = false;
         this.autoIncrement = autoIncrement;
+        this.defaultValue = defaultValue;
     }
 
     void setKey(boolean key) {
@@ -59,16 +61,20 @@ abstract class SqlColumn implements Column {
     }
 
     @Override
-    public String toString() {
-        return "SqlColumn{" +
-                "table=" + table +
-                ", name='" + name + '\'' +
-                ", jdbcType=" + jdbcType +
-                ", nullable=" + nullable +
-                ", key=" + key +
-                ", autoIncrement=" + autoIncrement +
-                '}';
+    public String getDefault() {
+        return defaultValue;
     }
 
-
+    @Override
+    public String toString() {
+        return "SqlColumn{" +
+                "autoIncrement=" + autoIncrement +
+                ", defaultValue='" + defaultValue + '\'' +
+                ", jdbcType=" + jdbcType +
+                ", key=" + key +
+                ", name='" + name + '\'' +
+                ", nullable=" + nullable +
+                ", table=" + table +
+                '}';
+    }
 }

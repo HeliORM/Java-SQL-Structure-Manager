@@ -12,16 +12,17 @@ public abstract class TestColumn implements Column {
     private final boolean key;
     private final boolean autoIncrement;
     private final Set<String> enumValues;
+    private final String defaultValue;
 
     public TestColumn(Table table, String name, JDBCType jdbcType) {
         this(table, name, jdbcType, false, false, false);
     }
 
     public TestColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean key, boolean autoIncrement) {
-        this(table, name, jdbcType, nullable, key, autoIncrement, null);
+        this(table, name, jdbcType, nullable, null, key, autoIncrement, null);
     }
 
-    public TestColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean key, boolean autoIncrement, Set<String> enumValues) {
+    public TestColumn(Table table, String name, JDBCType jdbcType, boolean nullable, String defaultValue, boolean key, boolean autoIncrement, Set<String> enumValues) {
         this.table = table;
         this.name = name;
         this.jdbcType = jdbcType;
@@ -29,6 +30,7 @@ public abstract class TestColumn implements Column {
         this.key = key;
         this.autoIncrement = autoIncrement;
         this.enumValues =enumValues;
+        this.defaultValue = defaultValue;
     }
 
     @Override
@@ -62,6 +64,11 @@ public abstract class TestColumn implements Column {
     }
 
     @Override
+    public String getDefault() {
+        return defaultValue;
+    }
+
+    @Override
     public int hashCode() {
         int result = table != null ? table.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
@@ -72,12 +79,14 @@ public abstract class TestColumn implements Column {
     @Override
     public String toString() {
         return "TestColumn{" +
-                "table=" + table +
-                ", name='" + name + '\'' +
+                "autoIncrement=" + autoIncrement +
+                ", defaultValue='" + defaultValue + '\'' +
+                ", enumValues=" + enumValues +
                 ", jdbcType=" + jdbcType +
-                ", nullable=" + nullable +
                 ", key=" + key +
-                ", autoIncrement=" + autoIncrement +
+                ", name='" + name + '\'' +
+                ", nullable=" + nullable +
+                ", table=" + table +
                 '}';
     }
 }

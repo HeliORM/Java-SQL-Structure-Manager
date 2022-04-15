@@ -1,6 +1,7 @@
 package com.heliorm.sql;
 
 import java.sql.JDBCType;
+import java.util.Collections;
 
 public class TestStringColumn extends TestColumn implements StringColumn {
 
@@ -13,6 +14,11 @@ public class TestStringColumn extends TestColumn implements StringColumn {
 
     public TestStringColumn(Table table, String name, JDBCType jdbcType, boolean nullable, boolean key, int length) {
         super(table, name, jdbcType, nullable, key, false);
+        this.length = length;
+    }
+
+    public TestStringColumn(Table table, String name, JDBCType jdbcType, boolean nullable, String defaultValue, boolean key, boolean autoIncrement, int length) {
+        super(table, name, jdbcType, nullable, defaultValue, key, autoIncrement, Collections.emptySet());
         this.length = length;
     }
 

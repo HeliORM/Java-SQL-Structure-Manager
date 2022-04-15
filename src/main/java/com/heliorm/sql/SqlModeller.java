@@ -328,6 +328,16 @@ public abstract class SqlModeller {
      */
     protected abstract Set<String> extractSetValues(String string);
 
+
+
+    /**
+     * Extract the default value from a string
+     *
+     * @param string The string from the database.
+     * @return The set of strings.
+     */
+    protected abstract String extractDefault(String string);
+
     /**
      * Determine if a column is a SET column
      *
@@ -623,36 +633,43 @@ public abstract class SqlModeller {
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String columnName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
+            String defVal  = rs.getString("COLUMN_DEF");
+            if (defVal != null) {
+                defVal = extractDefault(defVal);
+            }
 
             if (isEnumColumn(columnName, jdbcType, typeName)) {
-                return new SqlEnumColumn(table, columnName, nullable, readEnumValues(new SqlEnumColumn(table, columnName, nullable, Collections.emptySet())));
+                return new SqlEnumColumn(table, columnName, nullable, defVal, readEnumValues(new SqlEnumColumn(table, columnName, nullable, defVal, Collections.emptySet())));
             } else if (isSetColumn(columnName, jdbcType, typeName)) {
-                return new SqlSetColumn(table, columnName, nullable, readSetValues(new SqlSetColumn(table, columnName, nullable, Collections.emptySet())));
+                return new SqlSetColumn(table, columnName, nullable, defVal, readSetValues(new SqlSetColumn(table, columnName, nullable,defVal, Collections.emptySet())));
             } else if (isStringColumn(jdbcType)) {
-                return new SqlStringColumn(table, columnName, jdbcType, nullable, size.get());
+                return new SqlStringColumn(table, columnName, jdbcType, nullable, defVal, size.get());
             } else if (isBinaryColumn(jdbcType)) {
-                return new SqlBinaryColumn(table, columnName, jdbcType, nullable, size.get());
+                return new SqlBinaryColumn(table, columnName, jdbcType, nullable, defVal, size.get());
             }
             if (isDateTimeColumn(jdbcType)) {
                 return new SqlDateTimeColumn(table, columnName, jdbcType, nullable);
             }
             switch (jdbcType) {
                 case BIT:
-                    return new SqlBitColumn(table, columnName, nullable, size.get());
+                    return new SqlBitColumn(table, columnName, nullable, defVal, size.get());
                 case BOOLEAN:
-                    return new SqlBooleanColumn(table, columnName, nullable);
+                    return new SqlBooleanColumn(table, columnName, nullable, defVal);
                 case DECIMAL:
                 case DOUBLE:
-                    return new SqlDecimalColumn(table, columnName, jdbcType, nullable, size.get(), rs.getInt("DECIMAL_DIGITS"));
+                    return new SqlDecimalColumn(table, columnName, jdbcType, nullable,defVal, size.get(), rs.getInt("DECIMAL_DIGITS"));
                 case NUMERIC:
                     if (size.isPresent()) {
-                        return new SqlDecimalColumn(table, columnName, jdbcType, nullable, size.get(), rs.getInt("DECIMAL_DIGITS"));
+                        return new SqlDecimalColumn(table, columnName, jdbcType, nullable, defVal, size.get(), rs.getInt("DECIMAL_DIGITS"));
                     }
-                    return new SqlDecimalColumn(table, columnName, jdbcType, nullable);
+                    return new SqlDecimalColumn(table, columnName, jdbcType, nullable, defVal);
                 case INTEGER:
                 case SMALLINT:
                 case BIGINT:
-                    return new SqlIntegerColumn(table, columnName, jdbcType, nullable, autoIncrement);
+                    if (autoIncrement) {
+                        return new SqlIntegerColumn(table, columnName, jdbcType, nullable, null, true);
+                    }
+                    return new SqlIntegerColumn(table, columnName, jdbcType, nullable, defVal, false);
             }
             throw new SqlModellerException(format("Unsupported JDBC type %s in result set. BUG!", jdbcType.getName()));
         } catch (SQLException ex) {

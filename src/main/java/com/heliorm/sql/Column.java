@@ -43,4 +43,10 @@ public interface Column {
      */
     boolean isAutoIncrement();
 
+    /** Get the default value for the column
+     *
+     * @return The default value
+     */
+    String getDefault();
+
 }

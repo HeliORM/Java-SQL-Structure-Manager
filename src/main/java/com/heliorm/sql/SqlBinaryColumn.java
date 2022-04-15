@@ -6,8 +6,8 @@ public class SqlBinaryColumn extends SqlColumn implements BinaryColumn {
 
     private final int length;
 
-    SqlBinaryColumn(Table table, String name, JDBCType jdbcType, boolean nullable, int length) {
-        super(table, name, jdbcType, nullable, false);
+    SqlBinaryColumn(Table table, String name, JDBCType jdbcType, boolean nullable, String defVal, int length) {
+        super(table, name, jdbcType, nullable, defVal, false);
         this.length = length;
     }
 

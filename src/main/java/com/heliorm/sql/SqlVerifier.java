@@ -120,6 +120,8 @@ public final class SqlVerifier {
                 && one.isNullable() == other.isNullable()
                 && one.isKey() == other.isKey()
                 && one.getName().equals(other.getName())
+                && ((one.getDefault() != null && other.getDefault() != null && one.getDefault().equals(other.getDefault()))
+                || (one.getDefault() == null && other.getDefault() == null))
                 && modeller.typesAreCompatible(one,other);
     }
 
