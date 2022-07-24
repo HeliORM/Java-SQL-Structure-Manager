@@ -459,7 +459,7 @@ public abstract class SqlModeller {
         } else if (length > 255) {
             return 65535;
         }
-        return 255;
+        return length;
     }
 
     /**
