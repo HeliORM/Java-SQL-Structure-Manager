@@ -146,7 +146,7 @@ public final class MysqlModeller extends SqlModeller {
         if (!column.isNullable()) {
             type.append(" NOT NULL");
         }
-        if (column.getDefault() != null) {
+        if ((column.getDefault() != null) && !column.isAutoIncrement()) {
             type.append(format(" DEFAULT '%s'", column.getDefault()));
         }
         if (column.isAutoIncrement()) {

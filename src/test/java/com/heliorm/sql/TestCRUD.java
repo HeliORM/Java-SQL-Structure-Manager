@@ -190,6 +190,16 @@ public class TestCRUD extends AbstractSqlTest {
     }
 
     @Test
+    @Order(34)
+    public void addIntegerColumnWithDefault() throws SqlModellerException {
+        TestColumn len = new TestIntegerColumn(table, "length", JDBCType.BIGINT, false, "0", false);
+        table.addColumn(len);
+        modeller.addColumn(len);
+        Table loaded = modeller.readTable(db, "Person");
+        assertTrue(isSameTable(loaded, table), "Table we modified must be the same as the one loaded");
+    }
+
+    @Test
     @Order(40)
     public void addEnumColumn() throws SqlModellerException {
         TestColumn type = new TestEnumColumn(table, "type", true, new HashSet<>(Arrays.asList("APE", "BEAST")));
