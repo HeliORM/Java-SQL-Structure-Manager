@@ -14,6 +14,7 @@ import com.heliorm.sql.Index;
 import com.heliorm.sql.SetColumn;
 import com.heliorm.sql.StringColumn;
 import com.heliorm.sql.Table;
+import com.heliorm.sql.TimeStampColumn;
 
 import java.sql.Connection;
 import java.sql.JDBCType;
@@ -140,7 +141,10 @@ public final class MysqlModeller extends SqlModeller {
             }
         }
         else if (column instanceof DateTimeColumn) {
-            typeName = column.getJdbcType().getName();
+            typeName = "DATETIME";
+        }
+        else if (column instanceof TimeStampColumn) {
+            typeName = "TIMESTAMP";
         }
         type.append(typeName);
         if (!column.isNullable()) {
