@@ -329,7 +329,6 @@ public abstract class SqlModeller {
     protected abstract Set<String> extractSetValues(String string);
 
 
-
     /**
      * Extract the default value from a string
      *
@@ -633,7 +632,7 @@ public abstract class SqlModeller {
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String columnName = rs.getString("COLUMN_NAME");
             String typeName = rs.getString("TYPE_NAME");
-            String defVal  = rs.getString("COLUMN_DEF");
+            String defVal = rs.getString("COLUMN_DEF");
             if (defVal != null) {
                 defVal = extractDefault(defVal);
             }
@@ -641,14 +640,18 @@ public abstract class SqlModeller {
             if (isEnumColumn(columnName, jdbcType, typeName)) {
                 return new SqlEnumColumn(table, columnName, nullable, defVal, readEnumValues(new SqlEnumColumn(table, columnName, nullable, defVal, Collections.emptySet())));
             } else if (isSetColumn(columnName, jdbcType, typeName)) {
-                return new SqlSetColumn(table, columnName, nullable, defVal, readSetValues(new SqlSetColumn(table, columnName, nullable,defVal, Collections.emptySet())));
+                return new SqlSetColumn(table, columnName, nullable, defVal, readSetValues(new SqlSetColumn(table, columnName, nullable, defVal, Collections.emptySet())));
             } else if (isStringColumn(jdbcType)) {
                 return new SqlStringColumn(table, columnName, jdbcType, nullable, defVal, size.get());
             } else if (isBinaryColumn(jdbcType)) {
                 return new SqlBinaryColumn(table, columnName, jdbcType, nullable, defVal, size.get());
             }
             if (isDateTimeColumn(jdbcType)) {
-                return new SqlDateTimeColumn(table, columnName, jdbcType, nullable);
+                if (typeName.equals("DATETIME")) {
+                    return new SqlDateTimeColumn(table, columnName, jdbcType, nullable, defVal);
+                } else {
+                    return new SqlTimeStampColumn(table, columnName, jdbcType, nullable, defVal);
+                }
             }
             switch (jdbcType) {
                 case BIT:
@@ -657,7 +660,7 @@ public abstract class SqlModeller {
                     return new SqlBooleanColumn(table, columnName, nullable, defVal);
                 case DECIMAL:
                 case DOUBLE:
-                    return new SqlDecimalColumn(table, columnName, jdbcType, nullable,defVal, size.get(), rs.getInt("DECIMAL_DIGITS"));
+                    return new SqlDecimalColumn(table, columnName, jdbcType, nullable, defVal, size.get(), rs.getInt("DECIMAL_DIGITS"));
                 case NUMERIC:
                     if (size.isPresent()) {
                         return new SqlDecimalColumn(table, columnName, jdbcType, nullable, defVal, size.get(), rs.getInt("DECIMAL_DIGITS"));

@@ -295,6 +295,11 @@ public final class MysqlModeller extends SqlModeller {
             }
             return false;
         }
+        else if (one instanceof DateTimeColumn) {
+            if (other instanceof DateTimeColumn) {
+                return true;
+            }
+        }
         return one.getJdbcType() == other.getJdbcType();
     }
 
