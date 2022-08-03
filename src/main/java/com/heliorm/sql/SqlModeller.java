@@ -667,7 +667,7 @@ public abstract class SqlModeller {
                 case SMALLINT:
                 case BIGINT:
                     if (autoIncrement) {
-                        return new SqlIntegerColumn(table, columnName, jdbcType, nullable, null, true);
+                        return new SqlIntegerColumn(table, columnName, jdbcType, nullable, defVal, true);
                     }
                     return new SqlIntegerColumn(table, columnName, jdbcType, nullable, defVal, false);
             }
