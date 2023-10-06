@@ -128,7 +128,7 @@ public final class PostgresModeller extends SqlModeller {
 
     @Override
     protected String makeReadSetQuery(SetColumn sqlSetColumn) throws SqlModellerException {
-        throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
+        throw new SqlModellerException("SET data types are not supported for PostgreSQL");
     }
 
     @Override
@@ -204,7 +204,7 @@ public final class PostgresModeller extends SqlModeller {
         if (column instanceof EnumColumn) {
             buf.append(makeAddEnumTypeQuery((EnumColumn) column));
         } else if (column instanceof SetColumn) {
-            throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
+            throw new SqlModellerException("SET data types are not supported for PostgreSQL");
         }
         buf.append(format("ALTER TABLE %s ADD COLUMN %s %s",
                 getTableName(column.getTable()),
@@ -222,7 +222,7 @@ public final class PostgresModeller extends SqlModeller {
                 head.append(makeAddEnumTypeQuery((EnumColumn) column));
             }
             if (column instanceof SetColumn) {
-                throw new SqlModellerException(format("SET data types are not supported for PostgreSQL"));
+                throw new SqlModellerException("SET data types are not supported for PostgreSQL");
             }
             body.add(format("%s %s", getColumnName(column), getCreateType(column)));
         }
@@ -249,7 +249,7 @@ public final class PostgresModeller extends SqlModeller {
         try (Connection con = con(); Statement stmt = con.createStatement(); ResultSet rs = stmt.executeQuery(makeReadEnumQuery(getSqlTypeName(column)))) {
             if (rs.next()) {
                 return Stream.of(rs.getString("enum_value").split(","))
-                        .map(text -> text.trim())
+                        .map(String::trim)
                         .collect(Collectors.toSet());
             }
             throw new SqlModellerException(format("No enum values found for column %s in table %s ", column.getName(), column.getTable().getName()));
@@ -273,7 +273,6 @@ public final class PostgresModeller extends SqlModeller {
      *
      * @param column The column
      * @return The type name
-     * @throws SqlModellerException
      */
     private String getSqlTypeName(Column column) throws SqlModellerException {
         try (Connection con = con()) {
@@ -326,7 +325,7 @@ public final class PostgresModeller extends SqlModeller {
         buf.add(format("        CREATE TYPE \"%s\" AS ENUM(", typeName));
         buf.add(column.getEnumValues().stream()
                 .map(v -> "'" + v + "'")
-                .reduce((a, b) -> a + "," + b).get());
+                .collect(Collectors.joining(",")));
         buf.add(");");
         buf.add("    END IF;");
         buf.add("END$$;");
@@ -345,7 +344,7 @@ public final class PostgresModeller extends SqlModeller {
         if (column instanceof EnumColumn) {
             typeName = "\"" + typeName(column) + "\"";
         } else if (column instanceof SetColumn) {
-            throw new SqlModellerException(format("SET data types are not supported for Postgres"));
+            throw new SqlModellerException("SET data types are not supported for Postgres");
         } else if (column instanceof StringColumn) {
             int length = ((StringColumn) column).getLength();
             if (length > 65535) {
@@ -356,7 +355,7 @@ public final class PostgresModeller extends SqlModeller {
         } else if (column instanceof DecimalColumn) {
             switch (column.getJdbcType()) {
                 case DOUBLE:
-                    typeName = format("DOUBLE PRECISION");
+                    typeName = "DOUBLE PRECISION";
                     break;
                 case FLOAT:
                     typeName = format("FLOAT(%d)", ((DecimalColumn) column).getPrecision());

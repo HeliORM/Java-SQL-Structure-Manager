@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -51,7 +52,6 @@ public abstract class SqlModeller {
      *
      * @param table The table
      * @return The schema
-     * @throws SqlModellerException
      */
     public final String generateSchema(Table table) throws SqlModellerException {
         return makeCreateTableQuery(table);
@@ -247,7 +247,6 @@ public abstract class SqlModeller {
      * Add an index to a SQL table.
      *
      * @param index The index to add
-     * @throws SqlModellerException
      */
     public final void addIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
@@ -262,7 +261,6 @@ public abstract class SqlModeller {
      *
      * @param current The index to modify
      * @param changed The changed index
-     * @throws SqlModellerException
      */
     public final void renameIndex(Index current, Index changed) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
@@ -276,7 +274,6 @@ public abstract class SqlModeller {
      * Modify an index on a SQL table
      *
      * @param index The index to modify
-     * @throws SqlModellerException
      */
     public abstract void modifyIndex(Index index) throws SqlModellerException;
 
@@ -291,7 +288,6 @@ public abstract class SqlModeller {
      * Remove an index from a SQL table.
      *
      * @param index The index to remove
-     * @throws SqlModellerException
      */
     public final void removeIndex(Index index) throws SqlModellerException {
         try (Connection con = con(); Statement stmt = con.createStatement()) {
@@ -352,7 +348,6 @@ public abstract class SqlModeller {
      *
      * @param column The column
      * @return The set values.
-     * @throws SqlModellerException
      */
     protected abstract Set<String> readEnumValues(EnumColumn column) throws SqlModellerException;
 
@@ -369,7 +364,7 @@ public abstract class SqlModeller {
                 getTableName(index.getTable()),
                 index.getColumns().stream()
                         .map(this::getColumnName)
-                        .reduce((c1, c2) -> c1 + "," + c2).get());
+                        .collect(Collectors.joining(",")));
     }
 
     /**
@@ -393,7 +388,6 @@ public abstract class SqlModeller {
      *
      * @param column The column
      * @return The type text
-     * @throws SqlModellerException
      */
     protected abstract String getCreateType(Column column) throws SqlModellerException;
 
@@ -466,7 +460,6 @@ public abstract class SqlModeller {
      *
      * @param column The column
      * @return The SQL statement
-     * @throws SqlModellerException
      */
     protected abstract String makeModifyColumnQuery(Column column) throws SqlModellerException;
 
@@ -516,7 +509,6 @@ public abstract class SqlModeller {
      *
      * @param column The column
      * @return The set values.
-     * @throws SqlModellerException
      */
     private Set<String> readSetValues(SetColumn column) throws SqlModellerException {
         String query = makeReadSetQuery(column);
@@ -545,7 +537,6 @@ public abstract class SqlModeller {
      * Generate a SQL statement to rename a column in a table.
      *
      * @param column The current column
-     * @param column The changed column
      * @return The SQL
      */
     private String makeRenameColumnQuery(Column column, Column changed) {
@@ -622,12 +613,11 @@ public abstract class SqlModeller {
      * @param table The table for the column
      * @param rs    The result set
      * @return The column mode
-     * @throws SqlModellerException
      */
     private SqlColumn getColumnFromResultSet(Table table, ResultSet rs) throws SqlModellerException {
         try {
             JDBCType jdbcType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
-            Optional<Integer> size = Optional.ofNullable(rs.getInt("COLUMN_SIZE"));
+            Optional<Integer> size = Optional.of(rs.getInt("COLUMN_SIZE"));
             boolean nullable = rs.getString("IS_NULLABLE").equals("YES");
             boolean autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES");
             String columnName = rs.getString("COLUMN_NAME");

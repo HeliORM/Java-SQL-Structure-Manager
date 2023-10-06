@@ -11,10 +11,10 @@ abstract class SqlColumn implements Column {
     private final Table table;
     private final String name;
     private final JDBCType jdbcType;
-    private final boolean nullable;
+    private boolean nullable;
     private boolean key;
-    private boolean autoIncrement;
-    private String defaultValue;
+    private final boolean autoIncrement;
+    private final String defaultValue;
 
     SqlColumn(Table table, String name, JDBCType jdbcType, boolean nullable, String defaultValue, boolean autoIncrement) {
         this.table = table;
@@ -65,6 +65,10 @@ abstract class SqlColumn implements Column {
         return defaultValue;
     }
 
+    void setNullable(boolean nullable) {
+        this.nullable = nullable;
+    }
+    
     @Override
     public String toString() {
         return "SqlColumn{" +

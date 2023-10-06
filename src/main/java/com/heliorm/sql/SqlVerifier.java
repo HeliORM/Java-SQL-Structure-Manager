@@ -37,7 +37,6 @@ public final class SqlVerifier {
      *
      * @param table The table
      * @return The changes made to synchronize the table.
-     * @throws SqlModellerException
      */
     public List<Action> synchronizeDatabaseTable(Table table) throws SqlModellerException {
         if (!modeller.tableExists(table)) {
@@ -54,9 +53,9 @@ public final class SqlVerifier {
     private List<Action> synchronizeColumns(Table table) throws SqlModellerException {
         Table sqlTable = modeller.readTable(table.getDatabase(), table.getName());
         Map<String, Column> tableColumns = table.getColumns().stream()
-                .collect(Collectors.toMap(col -> col.getName(), col -> col));
+                .collect(Collectors.toMap(Column::getName, col -> col));
         Map<String, Column> sqlColumns = sqlTable.getColumns().stream()
-                .collect(Collectors.toMap(col -> col.getName(), col -> col));
+                .collect(Collectors.toMap(Column::getName, col -> col));
         List<Action> actions = new ArrayList<>();
         for (String name : tableColumns.keySet()) {
             Column tableColumn = tableColumns.get(name);
@@ -65,7 +64,7 @@ public final class SqlVerifier {
                 actions.add(Action.addColumn(tableColumn));
             } else {
                 Column sqlColumn = sqlColumns.get(name);
-                if (!isSame(tableColumn,sqlColumn)) {
+                if (isNotSame(tableColumn, sqlColumn)) {
                     modeller.modifyColumn(tableColumn);
                     actions.add(Action.modifyColumn(tableColumn));
                 }
@@ -78,6 +77,15 @@ public final class SqlVerifier {
                     modeller.deleteColumn(sqlColumn);
                     actions.add(Action.deleteColumn(sqlColumn));
                 }
+                else {
+                    if (!sqlColumn.isNullable()) {
+                        if (sqlColumn instanceof SqlColumn) {
+                            ((SqlColumn) sqlColumn).setNullable(true);
+                            modeller.modifyColumn(sqlColumn);
+                            actions.add(Action.modifyColumn(sqlColumn));
+                        }
+                    }
+                }
             }
         }
         return actions;
@@ -86,9 +94,9 @@ public final class SqlVerifier {
     private List<Action> synchronizeIndexes(Table table) throws SqlModellerException {
         Table sqlTable = modeller.readTable(table.getDatabase(), table.getName());
         Map<String, Index> tableIndexes = table.getIndexes().stream()
-                .collect(Collectors.toMap(col -> col.getName(), col -> col));
+                .collect(Collectors.toMap(Index::getName, col -> col));
         Map<String, Index> sqlIndexes = sqlTable.getIndexes().stream()
-                .collect(Collectors.toMap(col -> col.getName(), col -> col));
+                .collect(Collectors.toMap(Index::getName, col -> col));
         List<Action> actions = new ArrayList<>();
         for (String name : tableIndexes.keySet()) {
             Index tableIndex = tableIndexes.get(name);
@@ -115,14 +123,14 @@ public final class SqlVerifier {
         return actions;
     }
 
-    private boolean isSame(Column one, Column other) {
-        return one.isAutoIncrement() == other.isAutoIncrement()
-                && one.isNullable() == other.isNullable()
-                && one.isKey() == other.isKey()
-                && one.getName().equals(other.getName())
-                && ((one.getDefault() != null && other.getDefault() != null && one.getDefault().equals(other.getDefault()))
-                || (one.getDefault() == null && other.getDefault() == null))
-                && modeller.typesAreCompatible(one,other);
+    private boolean isNotSame(Column one, Column other) {
+        return one.isAutoIncrement() != other.isAutoIncrement()
+                || one.isNullable() != other.isNullable()
+                || one.isKey() != other.isKey()
+                || !one.getName().equals(other.getName())
+                || ((one.getDefault() == null || other.getDefault() == null || !one.getDefault().equals(other.getDefault()))
+                && (one.getDefault() != null || other.getDefault() != null))
+                || !modeller.typesAreCompatible(one, other);
     }
 
     private boolean isSame(Index one, Index other) {
@@ -138,13 +146,13 @@ public final class SqlVerifier {
         if (one.size() != other.size()) {
             return false;
         }
-        Map<String, Column> oneMap = one.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
-        Map<String, Column> otherMap = other.stream().collect(Collectors.toMap(col -> col.getName(), col -> col));
+        Map<String, Column> oneMap = one.stream().collect(Collectors.toMap(Column::getName, col -> col));
+        Map<String, Column> otherMap = other.stream().collect(Collectors.toMap(Column::getName, col -> col));
         for (String name : oneMap.keySet()) {
             if (!otherMap.containsKey(name)) {
                 return false;
             }
-            if (!isSame(oneMap.get(name), otherMap.get(name))) {
+            if (isNotSame(oneMap.get(name), otherMap.get(name))) {
                 return false;
             }
         }

@@ -44,7 +44,7 @@ public final class MysqlModeller extends SqlModeller {
     }
 
     @Override
-    protected String makeCreateTableQuery(Table table) throws SqlModellerException {
+    protected String makeCreateTableQuery(Table table) {
         StringJoiner body = new StringJoiner(",");
         for (Column column : table.getColumns()) {
             body.add(format("%s %s", getColumnName(column), getCreateType(column)));
@@ -57,11 +57,9 @@ public final class MysqlModeller extends SqlModeller {
                             .map(this::getColumnName)
                             .reduce((c1, c2) -> c1 + "," + c2).get()));
         }
-        StringBuilder sql = new StringBuilder();
-        sql.append(format("CREATE TABLE %s (", getTableName(table)));
-        sql.append(body);
-        sql.append(")");
-        return sql.toString();
+        return format("CREATE TABLE %s (", getTableName(table)) +
+                body +
+                ")";
     }
 
     @Override
