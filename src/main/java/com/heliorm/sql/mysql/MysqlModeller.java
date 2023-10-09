@@ -135,7 +135,7 @@ public final class MysqlModeller extends SqlModeller {
             } else if (length > 255) {
                 typeName = "BLOB";
             } else {
-                typeName = format("TINYBLOB");
+                typeName = "TINYBLOB";
             }
         }
         else if (column instanceof DateTimeColumn) {
@@ -254,16 +254,16 @@ public final class MysqlModeller extends SqlModeller {
             if (other instanceof EnumColumn) {
                 Set<String> ones = ((EnumColumn) one).getEnumValues();
                 Set<String> others = ((EnumColumn) other).getEnumValues();
-                return ones.stream().allMatch(v -> others.contains(v))
-                        && (others.stream().allMatch(v -> ones.contains(v)));
+                return others.containsAll(ones)
+                        && (ones.containsAll(others));
             }
             return false;
         } else if (one instanceof SetColumn) {
             if (other instanceof SetColumn) {
                 Set<String> ones = ((SetColumn) one).getSetValues();
                 Set<String> others = ((SetColumn) other).getSetValues();
-                return ones.stream().allMatch(v -> others.contains(v))
-                        && (others.stream().allMatch(v -> ones.contains(v)));
+                return others.containsAll(ones)
+                        && (ones.containsAll(others));
             }
             return false;
         } else if (one instanceof BitColumn) {

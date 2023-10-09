@@ -14,6 +14,7 @@ public final class SqlVerifier {
 
     private final SqlModeller modeller;
     private boolean deleteMissingColumns = false;
+    private boolean deleteMissingIndexes = false;
 
     /** Create a new verifier for the supplied SQL modeller.
      *
@@ -114,7 +115,7 @@ public final class SqlVerifier {
         for (String name : sqlIndexes.keySet()) {
             Index sqlIndex  = sqlIndexes.get(name);
             if (!tableIndexes.containsKey(name)) {
-                if (deleteMissingColumns) {
+                if (deleteMissingIndexes) {
                     modeller.removeIndex(sqlIndex);
                     actions.add(Action.deleteIndex(sqlIndex));
                 }
